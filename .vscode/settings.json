@@ -1,0 +1,5 @@
+{
+  "appService.showBuildDuringDeployPrompt": false,
+  "appService.defaultWebAppToDeploy": "/subscriptions/604b9117-8ec6-43f0-8b22-ea1330d820cb/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/easy-mundodigital",
+  "appService.deploySubpath": "build"
+}

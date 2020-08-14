@@ -1,0 +1,15 @@
+[0609/042952.643:ERROR:process_reader_win.cc(123)] NtOpenThread: {Acesso Negado} Um processo solicitou acesso a um objeto, mas o direito de acesso não lhe foi concedido. (0xc0000022)
+[0609/042952.650:ERROR:exception_snapshot_win.cc(98)] thread ID 16000 not found in process
+[0609/042952.672:ERROR:process_reader_win.cc(123)] NtOpenThread: {Acesso Negado} Um processo solicitou acesso a um objeto, mas o direito de acesso não lhe foi concedido. (0xc0000022)
+[0609/042952.672:ERROR:exception_snapshot_win.cc(98)] thread ID 5900 not found in process
+[0707/202136.659:ERROR:file_io.cc(89)] ReadExactly: expected 36, observed 0
+[0715/085148.017:ERROR:process_reader_win.cc(123)] NtOpenThread: {Acesso Negado} Um processo solicitou acesso a um objeto, mas o direito de acesso não lhe foi concedido. (0xc0000022)
+[0715/085148.029:ERROR:exception_snapshot_win.cc(98)] thread ID 13520 not found in process
+[0715/085148.053:ERROR:process_reader_win.cc(123)] NtOpenThread: {Acesso Negado} Um processo solicitou acesso a um objeto, mas o direito de acesso não lhe foi concedido. (0xc0000022)
+[0715/085148.053:ERROR:exception_snapshot_win.cc(98)] thread ID 5800 not found in process
+[0716/145447.050:ERROR:process_reader_win.cc(123)] NtOpenThread: {Acesso Negado} Um processo solicitou acesso a um objeto, mas o direito de acesso não lhe foi concedido. (0xc0000022)
+[0716/145447.066:ERROR:exception_snapshot_win.cc(98)] thread ID 8564 not found in process
+[0717/162735.736:ERROR:process_info.cc(359)] UncheckedAllocate
+[0717/162743.884:ERROR:process_info.cc(359)] UncheckedAllocate
+[0731/135058.808:ERROR:process_info.cc(329)] VirtualQueryEx: Acesso negado. (0x5)
+[0731/135058.823:ERROR:process_info.cc(556)] ReadMemoryInfo failed
