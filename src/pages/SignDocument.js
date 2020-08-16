@@ -2,13 +2,16 @@ import React, { useEffect, useState } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import api from "../services/api";
 import moment from "moment";
+import { cpfMask, phoneMask } from "../util/Mask";
 import LacunaWebPki from "web-pki";
 import Iframe from "react-iframe";
 import axios from "axios";
+import Person from "../images/user.png";
 import BlockUi from "react-block-ui";
 import hashids from "hashids";
+import Phone from "../images/phone.png";
 import Filegeneric from "../images/filegeneric.png";
-
+import AlertTelefone from "../components/AlertTelefone";
 import $ from "jquery";
 import Loading from "../components/Loading";
 const hash = new hashids("", 35);
@@ -19,12 +22,14 @@ function SignDocument() {
   const { id } = useParams();
   const [findUser, setFindUser] = useState();
   const [block, setBlock] = useState(false);
+  const [cod, setCod] = useState("");
   const [currentOrg, setCurrentOrg] = useState(null);
   const [currentPaste, setCurrentPaste] = useState(null);
   const [findPending, setFindPending] = useState();
   const [currentFile, setCurrentFile] = useState([]);
   const [findOrder, setFindOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loading2, setLoading2] = useState(false);
   const [erros, setErros] = useState(null);
   const [status, setStatus] = useState(true);
   const history = useHistory();
@@ -2571,6 +2576,54 @@ function SignDocument() {
     }
   }
 
+  $("#certificate").change(function () {
+    if ($(this).is(":checked")) {
+      $(".eletronic-body").addClass("hidden");
+      $(".certificate-body").removeClass("hidden");
+      $(".container-eletronic2").addClass("hidden");
+      $(".container-eletronic").removeClass("hidden");
+    }
+  });
+  $("#eletronic").change(function () {
+    if ($(this).is(":checked")) {
+      $(".eletronic-body").removeClass("hidden");
+      $(".certificate-body").addClass("hidden");
+      $(".eletronic-body").removeClass("hidden");
+    }
+  });
+
+  function submitSMS() {
+    $(".certificate").addClass("hidden");
+    setLoading2(true);
+
+    $(".container-eletronic").addClass("hidden");
+    api.get(`/eletronic/${findUser.email}`).then((result) => {
+      $(".alertSMS").removeClass("hidden");
+      setTimeout(() => {
+        $(".alertSMS").addClass("hidden");
+      }, 3000);
+      setCod(result.data.tokenSMS);
+      setLoading2(false);
+      $(".container-eletronic").addClass("hidden");
+      $(".container-eletronic2").removeClass("hidden");
+    });
+  }
+  async function eletronicSignature() {}
+  async function confirmSMS() {
+    var smsCod = document.getElementById("sms").value;
+    api.post(`/eletronic/${smsCod}/${findUser.email}`).then((result) => {
+      if (result.data.checked === true || result.data === "incorrect token") {
+        $(".alertSMS2").removeClass("hidden");
+        setTimeout(() => {
+          $(".alertSMS2").addClass("hidden");
+        }, 3000);
+      } else {
+        $(".container-eletronic3").removeClass("hidden");
+        $(".container-eletronic2").addClass("hidden");
+      }
+    });
+  }
+
   return block === true ? (
     <div>
       <BlockUi tag="div" blocking={block}>
@@ -2585,6 +2638,13 @@ function SignDocument() {
     </div>
   ) : (
     <div className="main-container">
+      <div>
+        {findUser.number === null ? (
+          <AlertTelefone nome={findUser.nome.split("")[0].toLowerCase()} />
+        ) : (
+          <div />
+        )}
+      </div>
       <div className="row ">
         <div className=" card container-pdf col-lg-5">
           {findPending.action === 1 ? (
@@ -2642,42 +2702,221 @@ function SignDocument() {
             <small>criado em:</small>
             <li>{moment(findPending.createdAt).format("DD-MM-YY HH:mm:ss")}</li>
           </div>
-          {findOrder.type === "signatario" ? (
+          {findOrder.signatureType === true ? (
             <div>
-              {findOrder.conclude === true ? (
-                <div></div>
-              ) : (
+              <div className="inputsType">
+                <div className="certificate">
+                  <li>
+                    <input
+                      type="radio"
+                      name="type"
+                      id="certificate"
+                      value={"certificate"}
+                    />{" "}
+                    <label htmlFor="certificate" className="list-nome-types">
+                      <i className="fas fa-address-card" />
+                      assinatura com certificado
+                    </label>{" "}
+                  </li>
+                </div>
+
                 <div>
                   {" "}
-                  <div className="container-certificados">
-                    <p>Certificados disponíveis:</p>
+                  <div className="certificate-body hidden">
+                    {findOrder.type === "signatario" ? (
+                      <div>
+                        {findOrder.conclude === true ? (
+                          <div></div>
+                        ) : (
+                          <div>
+                            {" "}
+                            <div className="container-certificados">
+                              <p>Certificados disponíveis:</p>
+                            </div>
+                            <select
+                              className="custom-select "
+                              id="certificateSelect"
+                            />
+                            {findPending.action === 0 ? (
+                              <div>
+                                {" "}
+                                <button
+                                  onClick={() => startPades()}
+                                  className="btn btn-cyan mt-1"
+                                >
+                                  assinar{" "}
+                                </button>
+                              </div>
+                            ) : (
+                              <div>
+                                <button
+                                  onClick={() => startCades()}
+                                  className="btn btn-cyan mt-1"
+                                >
+                                  assinar{" "}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div></div>
+                    )}
                   </div>
-                  <select className="custom-select " id="certificateSelect" />
-                  {findPending.action === 0 ? (
+                </div>
+                <li>
+                  <input
+                    type="radio"
+                    name="type"
+                    id="eletronic"
+                    value={"eletronic"}
+                  />{" "}
+                  <label htmlFor="eletronic" className="list-nome-types">
+                    <i className="fas fa-signature" />
+                    assinatura eletrônica
+                  </label>{" "}
+                </li>
+                <div class="alert alert-success alertSMS hidden" role="alert">
+                  token enviado com sucesso
+                </div>
+                <div class="alert alert-danger alertSMS2 hidden" role="alert">
+                  token incorreto
+                </div>
+                <div className="eletronic-body hidden">
+                  {loading2 ? (
                     <div>
                       {" "}
-                      <button
-                        onClick={() => startPades()}
-                        className="btn btn-cyan mt-1"
-                      >
-                        assinar{" "}
-                      </button>
+                      <div className="container-loading">
+                        <Loading color="#3D92C2" height={80} width={80} />
+                      </div>
                     </div>
                   ) : (
                     <div>
-                      <button
-                        onClick={() => startCades()}
-                        className="btn btn-cyan mt-1"
-                      >
-                        assinar{" "}
-                      </button>
+                      <div className="container-eletronic">
+                        <img src={Phone} alt="" />
+                        <p>
+                          Para continuar, clique no botão para solicitar o
+                          código de verificação por SMS.
+                        </p>
+                        <button
+                          className="btn btn-cyan mt-1"
+                          onClick={() => submitSMS()}
+                        >
+                          {" "}
+                          ENVIAR
+                        </button>
+                      </div>
+                      <div className="container-eletronic2 hidden">
+                        <img src={Phone} alt="" />
+                        <p>
+                          Informe o código enviado para o telefone com final{" "}
+                          <small className="token-sms">{cod.slice(-3)}</small>{" "}
+                          abaixo:
+                        </p>
+                        <div className="container-description form__group field">
+                          <input
+                            type="input"
+                            className="form__field"
+                            placeholder="Código"
+                            id="sms"
+                          />
+                          <label htmlFor="sms" className="form__label">
+                            Código
+                          </label>
+                        </div>
+                        <button
+                          className="btn btn-cyan mt-1"
+                          onClick={() => confirmSMS()}
+                        >
+                          {" "}
+                          ENVIAR
+                        </button>
+                      </div>
+                      <div className="container-eletronic3 hidden">
+                        <p>
+                          Informações da assinatura eletrônica{" "}
+                          <i className="fas fa-signature" />
+                        </p>
+
+                        <div className="card-info-eletronic ">
+                          <img src={Person} alt="" />
+                          <div className="row">
+                            {" "}
+                            <small>{findUser.nome}</small>
+                          </div>
+                          <div className="row">
+                            <small>{findUser.email}</small>
+                          </div>
+                          <div className="row">
+                            {" "}
+                            <small>{cpfMask(findUser.cpf)}</small>
+                          </div>
+                          <div className="row">
+                            {" "}
+                            <small>{phoneMask(findUser.number)}</small>
+                          </div>
+                        </div>
+
+                        <button
+                          className="btn btn-cyan mt-1"
+                          onClick={() => eletronicSignature()}
+                        >
+                          {" "}
+                          ASSINAR
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
-              )}
+              </div>
             </div>
           ) : (
-            <div></div>
+            <div>
+              {" "}
+              <div className="certificate-body">
+                {findOrder.type === "signatario" ? (
+                  <div>
+                    {findOrder.conclude === true ? (
+                      <div></div>
+                    ) : (
+                      <div>
+                        {" "}
+                        <div className="container-certificados">
+                          <p>Certificados disponíveis:</p>
+                        </div>
+                        <select
+                          className="custom-select "
+                          id="certificateSelect"
+                        />
+                        {findPending.action === 0 ? (
+                          <div>
+                            {" "}
+                            <button
+                              onClick={() => startPades()}
+                              className="btn btn-cyan mt-1"
+                            >
+                              assinar{" "}
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <button
+                              onClick={() => startCades()}
+                              className="btn btn-cyan mt-1"
+                            >
+                              assinar{" "}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div></div>
+                )}
+              </div>
+            </div>
           )}
           {findOrder.type === "aprovador" ? (
             <div>

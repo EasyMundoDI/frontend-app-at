@@ -200,6 +200,13 @@ function PedingDocument() {
                         <p className="element-conclude">concluído</p>
                       )}
                     </div>
+                    {element.signatureType === true ? (
+                      <div className="content-eletronic">
+                        <p>assinatura eletrônica</p>
+                      </div>
+                    ) : (
+                      <div></div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -214,22 +214,11 @@ function Document() {
       await Schema.validate(data, {
         abortEarly: false,
       });
-
+      var types = document.querySelectorAll("input[name=type]:checked");
       api
         .get(`/findUser/${data.email}/${data.cpf.replace(/\D/g, "")}`)
         .then((resultUser) => {
-          if (types.length === 1) {
-            setSigned((searches) =>
-              searches.concat({
-                nome: data.nome,
-                email: data.email,
-                cpf: data.cpf,
-                type: types[0].value,
-                eletronic: "",
-                signature: resultUser.data,
-              })
-            );
-          } else {
+          if (types[1]) {
             setSigned((searches) =>
               searches.concat({
                 nome: data.nome,
@@ -240,10 +229,19 @@ function Document() {
                 signature: resultUser.data,
               })
             );
+          } else {
+            setSigned((searches) =>
+              searches.concat({
+                nome: data.nome,
+                email: data.email,
+                cpf: data.cpf,
+                type: types[0].value,
+                eletronic: "",
+                signature: resultUser.data,
+              })
+            );
           }
         });
-
-      var types = document.querySelectorAll("input[name=type]:checked");
 
       document.getElementById("enviar").disabled = true;
 
@@ -269,13 +267,14 @@ function Document() {
   function onSubmitPromises() {
     let valorOrdens = document.getElementsByClassName("cards-dropzone");
     valorOrdens.forEach((value) => {
+      console.log(value);
       orders.push({
         nome: value.childNodes[2].innerText,
         email: value.childNodes[3].innerText,
         cpf: value.childNodes[4].innerText.replace(/\D/g, ""),
         type: value.childNodes[1].innerText,
-        signature: value.childNodes[5].innerText,
-        eletronic: value.childNodes[6].innerText,
+        signature: value.childNodes[6].innerText,
+        eletronic: value.childNodes[5].innerText,
       });
     });
 
@@ -318,7 +317,6 @@ function Document() {
       setBlock(true);
 
       orders.forEach((order, i, array) => {
-        console.log(order);
         api
           .get(`/findUser/${order.email}/${order.cpf}`)
           .then((resultadoUser) => {
@@ -352,7 +350,10 @@ function Document() {
                       .post(`/user/order`, {
                         type: order.type,
                         signature: "pending",
-                        signatureType: false,
+                        signatureType:
+                          order.eletronic === `AssinaturaEletrônica`
+                            ? true
+                            : false,
                         nome: order.nome,
                         email: order.email,
                         cpf: order.cpf,
@@ -411,7 +412,6 @@ function Document() {
                   });
               }, i * 5000);
             }
-
             if (order.signature === "usuário não registrado") {
               setTimeout(() => {
                 api
@@ -431,7 +431,10 @@ function Document() {
                       .post(`/user/order`, {
                         type: order.type,
                         signature: "strange",
-                        signatureType: false,
+                        signatureType:
+                          order.eletronic === `AssinaturaEletrônica`
+                            ? true
+                            : false,
                         nome: order.nome,
                         email: order.email,
                         cpf: order.cpf,
@@ -492,6 +495,22 @@ function Document() {
       $(this).closest(".cards-dropzone").remove();
       return false;
     });
+  });
+
+  $("#checkboxTypeSignatario").change(function () {
+    if ($(this).is(":checked")) {
+      $(".eletronic-signature").removeClass("hidden");
+    }
+  });
+  $("#checkboxTypeAprovador").change(function () {
+    if ($(this).is(":checked")) {
+      $(".eletronic-signature").addClass("hidden");
+    }
+  });
+  $("#checkboxTypeObservador").change(function () {
+    if ($(this).is(":checked")) {
+      $(".eletronic-signature").addClass("hidden");
+    }
   });
 
   return block === true ? (
@@ -610,7 +629,7 @@ function Document() {
                   htmlFor="checkboxTypeEletronic"
                   className="list-nome-types"
                 >
-                  <i className="fas fa-pencil-alt" />
+                  <i className="fas fa-signature" />
                   permitir assinatura eletrônica
                 </label>
               </li>
