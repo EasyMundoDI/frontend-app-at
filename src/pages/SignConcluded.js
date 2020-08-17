@@ -209,7 +209,7 @@ function SignConcluded() {
             <div className="btn-group-vertical">
               {signed.action === 0 ? (
                 <a
-                  href={`${process.env.REACT_APP_BACKEND_URL}/printer-friendly/${signed.key}/pades`}
+                  href={`${process.env.REACT_APP_BACKEND_URL}/files/${signed.key}`}
                   target="_blank"
                 >
                   <button className="btn btn-info">

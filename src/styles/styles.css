@@ -1465,7 +1465,7 @@ input[type="radio"]:checked + label:before {
   width: 80%;
   margin: 10%;
 }
-.container-eletronic img {
+.container-eletronicimg {
   width: 80px;
   height: 80px;
   margin-left: 30%;
@@ -1494,26 +1494,52 @@ input[type="radio"]:checked + label:before {
   color: rgba(0, 0, 0, 0.555);
 }
 .container-eletronic3 {
-  width: 80%;
-  margin: 10%;
+  width: 100%;
+  text-align: center;
 }
 .container-eletronic3 img {
-  width: 80px;
-  height: 80px;
-  margin-left: 30%;
-  margin-bottom: 10%;
+  width: 65px;
+  height: 65px;
+
+  margin-bottom: 5%;
 }
 .card-info-eletronic {
-  border: 2px solid rgba(0, 0, 0, 0.459);
   border-radius: 15px;
-  padding: 7%;
+  padding: 2%;
 }
 .card-info-eletronic small {
   font-weight: 900;
   font-size: 10pt;
   color: #333333d5;
   width: 100%;
-  margin: 3%;
+  margin: 1%;
+}
+.canvas-img {
+  width: 50%;
+  height: 20%;
+}
+.img-signature {
+  width: 150px auto;
+  height: 100px auto;
+}
+.modal-signature {
+  color: #35599a;
+  cursor: pointer;
+}
+.modal-header img {
+  width: 35px;
+  height: 35px;
+}
+.modal-title {
+}
+.sigCanvas {
+  cursor: cell;
+  border-radius: 10px;
+  width: 100%;
+  border: 3px dashed rgba(128, 128, 128, 0.432);
+}
+.container-eletronic3 button {
+  margin-right: 30%;
 }
 .token-sms {
   font-weight: 900;
@@ -1534,6 +1560,7 @@ input[type="radio"]:checked + label:before {
 .eletronic-body {
   border: 2px solid rgba(0, 0, 0, 0.37);
   border-radius: 10px;
+  width: 70%;
 }
 .container-signature select {
   margin-bottom: 3%;

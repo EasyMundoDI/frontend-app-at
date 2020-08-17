@@ -1,13 +1,11 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
 import Hashids from "hashids";
-import BlockUi from "react-block-ui";
 import moment from "moment";
 import LacunaWebPki from "web-pki";
 import api from "../services/api";
-import Logo from "../images/Mundo_Digital_Logo_Fundo_Transparente.png";
-import Image001 from "../images/image001.png";
+
 import AlertTelefone from "../components/AlertTelefone";
 import Loading from "../components/Loading";
 import "react-block-ui/style.css";
@@ -19,12 +17,11 @@ const pki = new LacunaWebPki();
 
 function Dashboard() {
   const [loading, setLoading] = useState(true);
-  const [block, setBlock] = useState(false);
   const [infoUser, setInfoUser] = useState();
   const history = useHistory();
-  const signCanvas = useRef([]);
-  const canvasRef = useRef(null);
+
   const [pending, setPending] = useState([]);
+
   const [signed, setSigned] = useState([]);
   const [display, setDisplay] = useState(true);
 
@@ -40,9 +37,8 @@ function Dashboard() {
               .then((result) => {
                 setPending(result.data);
                 setInfoUser(Infouser.data);
-                setTimeout(() => {
-                  setLoading(false);
-                }, 3000);
+
+                setLoading(false);
               });
           });
         async function loadcertificate() {
@@ -92,49 +88,6 @@ function Dashboard() {
     localStorage.clear();
     history.push("/");
   };
-
-  const clear = () => signCanvas.current.clear();
-
-  function save() {
-    const signature = signCanvas.current
-      .getTrimmedCanvas()
-      .toDataURL("image/png");
-    const canvas = canvasRef.current;
-
-    const ctx = canvas.getContext("2d");
-    const image2 = new Image();
-    const image = new Image();
-    image2.src = Image001;
-    image.src = signature;
-    image.onload = function () {
-      ctx.drawImage(image2, 0, 0);
-      ctx.drawImage(image, 300, 150, 150, 150);
-      ctx.fillStyle = "black";
-      ctx.fillText(infoUser.nome, 9, 150);
-      ctx.fillText(infoUser.email, 9, 200);
-      ctx.fillText(infoUser.cpf, 9, 250);
-      const carimbo = canvas.toDataURL("image/png");
-      srcToFile(carimbo, "hello.txt", "image/png").then((file) => {
-        const fd = new FormData();
-        fd.append("userfile", file);
-        return api
-          .post(`/uploadavatar/${infoUser}`, fd, {
-            nome: "signature",
-            size: file.size,
-          })
-          .then((result) => {
-            console.log(result);
-          });
-      });
-    };
-    ctx.font = "15px Arial";
-
-    function srcToFile(src, fileName, mimeType) {
-      return fetch(src)
-        .then((res) => res.arrayBuffer())
-        .then((buf) => new File([buf], fileName, { type: mimeType }));
-    }
-  }
 
   let pasteDoc;
   let orgDoc;
@@ -2936,13 +2889,7 @@ function Dashboard() {
     });
   }
 
-  return block === true ? (
-    <div>
-      <BlockUi tag="div" blocking={block}>
-        <h5>assinando os documentos</h5>
-      </BlockUi>
-    </div>
-  ) : (
+  return (
     <div className="main-container">
       {loading === true ? (
         <div />

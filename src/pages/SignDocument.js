@@ -1,13 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import api from "../services/api";
 import moment from "moment";
+import logo from "../images/Mundo_Digital_Logo_Fundo_Transparente.png";
+import world from "../images/logo_world.png";
+import { degrees, PDFDocument, rgb, StandardFonts } from "pdf-lib";
+
+import { jsPDF } from "jspdf";
 import { cpfMask, phoneMask } from "../util/Mask";
 import LacunaWebPki from "web-pki";
 import Iframe from "react-iframe";
+import Image001 from "../images/PdfStamp.png";
 import axios from "axios";
+import SignatureCanvas from "react-signature-canvas";
 import Person from "../images/user.png";
-import BlockUi from "react-block-ui";
+import Signature from "../images/signature.png";
 import hashids from "hashids";
 import Phone from "../images/phone.png";
 import Filegeneric from "../images/filegeneric.png";
@@ -22,6 +29,7 @@ function SignDocument() {
   const { id } = useParams();
   const [findUser, setFindUser] = useState();
   const [block, setBlock] = useState(false);
+
   const [cod, setCod] = useState("");
   const [currentOrg, setCurrentOrg] = useState(null);
   const [currentPaste, setCurrentPaste] = useState(null);
@@ -30,8 +38,8 @@ function SignDocument() {
   const [findOrder, setFindOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loading2, setLoading2] = useState(false);
-  const [erros, setErros] = useState(null);
-  const [status, setStatus] = useState(true);
+
+  const [avatar, setAvatar] = useState(null);
   const history = useHistory();
   const [currentOrder, setCurrentOrder] = useState([]);
 
@@ -59,20 +67,24 @@ function SignDocument() {
           ) => {
             api
               .get(`/user/pending/${id}/${findInfo.data.cpf}`)
-              .then((result) => {
-                setFindOrder(result.data[0]);
+              .then((resultOrder) => {
                 api.get(`/user/file/${pendingRes.data.file}`).then((result) => {
-                  setCurrentFile(result.data);
+                  api
+                    .get(`/uploadavatar/${findInfo.data.id}`)
+                    .then((resultAvatar) => {
+                      setFindOrder(resultOrder.data[0]);
+                      setAvatar(resultAvatar.data);
+                      setCurrentFile(result.data);
+                      setFindPending(pendingRes.data);
+                      setFindUser(findInfo.data);
 
-                  setLoading(false);
+                      setCurrentOrder(findOrdens.data);
+                      setCurrentPaste(findPaste.data);
+                      setCurrentOrg(findOrg.data[0]);
+                      setLoading(false);
+                    });
                 });
               });
-            setFindPending(pendingRes.data);
-            setFindUser(findInfo.data);
-
-            setCurrentOrder(findOrdens.data);
-            setCurrentPaste(findPaste.data);
-            setCurrentOrg(findOrg.data[0]);
 
             async function loadcertificate() {
               pki.init({
@@ -123,7 +135,8 @@ function SignDocument() {
 
   var pasteDoc;
   var orgDoc;
-
+  const signCanvas = useRef([]);
+  const canvasRef = useRef(null);
   async function startAprovador() {
     if (currentOrg === null || currentOrg === undefined) {
       orgDoc = null;
@@ -843,6 +856,142 @@ function SignDocument() {
                 });
             });
         });
+    }
+  }
+  async function eletronicSignature() {
+    if (currentOrg === null || currentOrg === undefined) {
+      orgDoc = null;
+    } else {
+      orgDoc = currentOrg.id;
+    }
+    if (currentPaste === null) {
+      pasteDoc = null;
+    } else {
+      pasteDoc = currentPaste.id;
+    }
+    setLoading(true);
+    if (currentOrder[0].cpf === findUser.cpf) {
+      const doc = new jsPDF();
+      doc.addImage(world, "png", 10, 10, 35, 35);
+      doc.addImage(logo, "png", 60, 20, 80, 25);
+      doc.setFontSize(10);
+      doc.addImage(
+        `${process.env.REACT_APP_BACKEND_URL}/files/${avatar.key}`,
+        "txt",
+        10,
+        78,
+        60,
+        38
+      );
+
+      doc.text(10, 60, `documento submetido por ${findPending.submetido}.`);
+
+      doc.text(
+        10,
+        150,
+        `documento assinado por ${currentOrder[0].nome} cpf:${currentOrder[0].cpf}`
+      );
+      var string = doc.output("datauristring");
+      srcToFile(string, `${findUser.nome}.pdf`, "application/pdf").then(
+        (file) => {
+          const fd = new FormData();
+          fd.append("userfile", file);
+          return api
+            .post(`/uploadEletronic/${currentFile.key}`, fd, {
+              nome: "signature",
+              size: file.size,
+            })
+            .then((resultEletronic) => {
+              api
+                .put(`/user/${findPending.id}/pending/${resultEletronic.data}`)
+                .then((result) => {
+                  api
+                    .put(`/user/${currentOrder[0].id}/pending`, {
+                      conclude: true,
+                    })
+                    .then((result) => {
+                      api
+                        .post(`/user/signedDocument`, {
+                          orgDoc,
+                          pasteDoc,
+                          file: findPending.file,
+                          url: currentFile.key,
+                          nome: findPending.nome,
+                          action: findPending.action,
+                          key: resultEletronic.data,
+                          status: 0,
+                          submetido: findPending.submetido,
+                          descriptionDoc: findPending.description,
+                          uniqueCod: findPending.uniqueCod,
+                        })
+                        .then((result) => {
+                          currentOrder.forEach((element, i, array) => {
+                            api
+                              .post(`/ordem/signed/${result.data.id}`, {
+                                email: element.email,
+                                nome: element.nome,
+                                cpf: element.cpf,
+                                conclude: element.conclude,
+                                type: element.type,
+                              })
+                              .then((resultc) => {
+                                api.post(`/ordem/signed/${result.data.id}`, {
+                                  email: array[0].email,
+                                  nome: array[0].nome,
+                                  cpf: array[0].cpf,
+                                  conclude: true,
+                                  type: array[0].type,
+                                });
+                              })
+                              .then((resultaaa) => {
+                                if (currentOrder.length === 1) {
+                                  api.put(
+                                    `/user/signedStatus/${result.data.id}`
+                                  );
+                                  api.delete(`/user/${id}/pending`);
+                                  history.push(
+                                    `/dashboard/document/signed/${hash.encode(
+                                      result.data.id
+                                    )}`
+                                  );
+                                } else {
+                                  if (currentOrder[1].signature === "strange") {
+                                    api.post(
+                                      `/eletronic/strange/${currentOrder[1].email}`,
+
+                                      {
+                                        idConclude: hash.encode(result.data.id),
+                                        idPending,
+                                      }
+                                    );
+                                  } else {
+                                    api.post(
+                                      `/eletronic/signature/${currentOrder[1].email}`
+                                    );
+                                  }
+
+                                  api.put(
+                                    `/user/${currentOrder[1].cpf}/ordem/${currentOrder[1].id}`
+                                  );
+                                  history.push(
+                                    `/dashboard/document/signed/${hash.encode(
+                                      result.data.id
+                                    )}`
+                                  );
+                                }
+                              });
+                          });
+                        });
+                    });
+                });
+            });
+        }
+      );
+      function srcToFile(src, fileName, mimeType) {
+        return fetch(src)
+          .then((res) => res.arrayBuffer())
+          .then((buf) => new File([buf], fileName, { type: mimeType }));
+      }
     }
   }
 
@@ -2575,6 +2724,46 @@ function SignDocument() {
       });
     }
   }
+  const clear = () => signCanvas.current.clear();
+
+  function save() {
+    const signature = signCanvas.current
+      .getTrimmedCanvas()
+      .toDataURL("image/png");
+    const canvas = canvasRef.current;
+
+    const ctx = canvas.getContext("2d");
+    const image2 = new Image();
+    const image = new Image();
+    image2.src = Image001;
+
+    image.src = signature;
+    image.onload = function () {
+      ctx.drawImage(image2, 0, 0);
+      ctx.drawImage(image, 130, 70, 100, 80);
+      ctx.fillStyle = "black";
+      ctx.font = "10pt Arial";
+      ctx.fillText("Documento assinado eletronicamente por:", 2, 30);
+      ctx.fillText(`nome:${findUser.nome}`, 1, 60);
+      ctx.fillText(`email:${findUser.email}`, 1, 90);
+      ctx.fillText(`cpf:${cpfMask(findUser.cpf)}`, 1, 120);
+      const carimbo = canvas.toDataURL("image/png");
+      srcToFile(carimbo, `${findUser.nome}.txt`, "image/png").then((file) => {
+        const fd = new FormData();
+        fd.append("userfile", file);
+        return api.post(`/uploadavatar/${findUser.id}`, fd, {
+          nome: "signature",
+          size: file.size,
+        });
+      });
+    };
+
+    function srcToFile(src, fileName, mimeType) {
+      return fetch(src)
+        .then((res) => res.arrayBuffer())
+        .then((buf) => new File([buf], fileName, { type: mimeType }));
+    }
+  }
 
   $("#certificate").change(function () {
     if ($(this).is(":checked")) {
@@ -2608,7 +2797,7 @@ function SignDocument() {
       $(".container-eletronic2").removeClass("hidden");
     });
   }
-  async function eletronicSignature() {}
+
   async function confirmSMS() {
     var smsCod = document.getElementById("sms").value;
     api.post(`/eletronic/${smsCod}/${findUser.email}`).then((result) => {
@@ -2624,13 +2813,7 @@ function SignDocument() {
     });
   }
 
-  return block === true ? (
-    <div>
-      <BlockUi tag="div" blocking={block}>
-        <p>assinando os documentos</p>
-      </BlockUi>
-    </div>
-  ) : loading === true ? (
+  return loading === true ? (
     <div className="main-container">
       <div className="container-loading">
         <Loading color="#3D92C2" height={80} width={80} />
@@ -2645,6 +2828,7 @@ function SignDocument() {
           <div />
         )}
       </div>
+
       <div className="row ">
         <div className=" card container-pdf col-lg-5">
           {findPending.action === 1 ? (
@@ -2794,24 +2978,142 @@ function SignDocument() {
                   ) : (
                     <div>
                       <div className="container-eletronic">
-                        <img src={Phone} alt="" />
+                        {avatar === null ? (
+                          <div>
+                            <img
+                              className="container-eletronicimg"
+                              src={Phone}
+                              alt=""
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <p>carimbo da assinatura</p>
+                            <img
+                              className="img-signature"
+                              src={`${process.env.REACT_APP_BACKEND_URL}/files/${avatar.key}`}
+                              alt=""
+                            />
+                          </div>
+                        )}
                         <p>
                           Para continuar, clique no botão para solicitar o
                           código de verificação por SMS.
                         </p>
-                        <button
-                          className="btn btn-cyan mt-1"
-                          onClick={() => submitSMS()}
-                        >
-                          {" "}
-                          ENVIAR
-                        </button>
+                        {avatar === null ? (
+                          <div>
+                            <div className="alert alert-danger" role="alert">
+                              {" "}
+                              A sua rubrica está pendente, adicione! será
+                              necessária para a assinatura eletrônica{" "}
+                              <p
+                                className="modal-signature"
+                                data-toggle="modal"
+                                data-target="#exampleModal3"
+                              >
+                                &nbsp; clique aqui!
+                              </p>
+                            </div>
+                            <div
+                              class="modal fade"
+                              id="exampleModal3"
+                              tabindex="-1"
+                              aria-labelledby="exampleModalLabel2"
+                              aria-hidden="true"
+                            >
+                              <div class="modal-dialog">
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <p
+                                      class="modal-title"
+                                      id="exampleModalLabel2"
+                                    >
+                                      insira sua rubrica{" "}
+                                      <img src={Signature} alt="" />
+                                    </p>
+                                    <button
+                                      type="button"
+                                      class="close"
+                                      data-dismiss="modal"
+                                      aria-label="Close"
+                                    >
+                                      <span aria-hidden="true">&times;</span>
+                                    </button>
+                                  </div>
+                                  <div class="modal-body">
+                                    <p>
+                                      {" "}
+                                      insira sua rubrica no campo abaixo ,ela
+                                      será usada no carimbo da assinatura
+                                      eletrônica
+                                    </p>{" "}
+                                    <SignatureCanvas
+                                      ref={signCanvas}
+                                      penColor="black"
+                                      canvasProps={{
+                                        width: 500,
+                                        height: 200,
+                                        className: "sigCanvas",
+                                      }}
+                                    />
+                                    <canvas
+                                      ref={canvasRef}
+                                      width={250}
+                                      height={175}
+                                      className="canvas-signature hidden"
+                                    >
+                                      <img
+                                        className="canvas-img"
+                                        src={Image001}
+                                        alt=""
+                                      />
+                                    </canvas>
+                                  </div>
+
+                                  <button
+                                    onClick={save}
+                                    type="button"
+                                    class="btn btn-primary"
+                                  >
+                                    Salvar
+                                  </button>
+                                  <button
+                                    onClick={clear}
+                                    type="button"
+                                    class="btn btn-primary"
+                                  >
+                                    Limpar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    class="btn btn-secondary"
+                                    data-dismiss="modal"
+                                  >
+                                    Fechar
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn btn-cyan mt-1"
+                            onClick={() => submitSMS()}
+                          >
+                            {" "}
+                            ENVIAR
+                          </button>
+                        )}
                       </div>
                       <div className="container-eletronic2 hidden">
                         <img src={Phone} alt="" />
                         <p>
-                          Informe o código enviado para o telefone com final{" "}
+                          Informe o código o com final{" "}
                           <small className="token-sms">{cod.slice(-3)}</small>{" "}
+                          enviado para o telefone{" "}
+                          <small className="token-sms">
+                            {phoneMask(findUser.number)}
+                          </small>{" "}
                           abaixo:
                         </p>
                         <div className="container-description form__group field">
@@ -2833,7 +3135,7 @@ function SignDocument() {
                           ENVIAR
                         </button>
                       </div>
-                      <div className="container-eletronic3 hidden">
+                      <div className="container-eletronic3 hidden ">
                         <p>
                           Informações da assinatura eletrônica{" "}
                           <i className="fas fa-signature" />
