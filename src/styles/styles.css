@@ -1127,6 +1127,13 @@ input[type="radio"]:checked + label:before {
   margin-bottom: 30px;
   width: 50%;
 }
+.form__group2 {
+  position: relative;
+  padding: 15px 0 0;
+  margin: 10px;
+  float: right;
+  width: 50%;
+}
 
 .form__field {
   font-family: inherit;
@@ -1229,8 +1236,76 @@ input[type="radio"]:checked + label:before {
   background-color: rgba(0, 0, 0, 0.041);
   border: 1px solid rgba(128, 128, 128, 0.192);
 }
+.container-select2 {
+  -webkit-box-shadow: 1px 1px 28px -19px rgba(0, 0, 0, 1);
+  -moz-box-shadow: 1px 1px 28px -19px rgba(0, 0, 0, 1);
+  box-shadow: 1px 1px 28px -19px rgba(0, 0, 0, 1);
+  margin-left: 30%;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.041);
+  border: 1px solid rgba(128, 128, 128, 0.192);
+}
+.container-profile {
+  padding: 10%;
+}
 .container-description {
   margin: 30px;
+}
+.container-user img {
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+}
+.container-user i {
+  margin-right: 10px;
+}
+.modal-body p img {
+  width: 20px;
+  height: 20px;
+  margin-left: 10px;
+}
+.container-user {
+  margin: 10px;
+}
+.container-user li {
+  margin: 10px;
+}
+.container-avatar {
+  margin: 10px;
+}
+.img-rubrica {
+  cursor: pointer;
+  width: 35px;
+  height: 35px;
+  position: relative;
+}
+.container-user img {
+  width: 20px;
+  height: 20px;
+  margin: 5px;
+}
+.container-user h5 {
+  font-weight: 900;
+  color: rgba(51, 51, 51, 0.616);
+  margin: 5px;
+}
+.container-avatar p {
+  font-weight: 600;
+}
+.container-avatar h5 {
+  font-weight: 600;
+  color: rgba(51, 51, 51, 0.616);
+}
+.container-user h6 {
+  font-weight: 900;
+  color: rgba(51, 51, 51, 0.849);
+}
+.container-user p {
+  font-weight: 600;
+}
+
+.container-description2 {
+  float: left;
 }
 
 .types {
@@ -1497,12 +1572,7 @@ input[type="radio"]:checked + label:before {
   width: 100%;
   text-align: center;
 }
-.container-eletronic3 img {
-  width: 65px;
-  height: 65px;
 
-  margin-bottom: 5%;
-}
 .card-info-eletronic {
   border-radius: 15px;
   padding: 2%;
@@ -1519,17 +1589,14 @@ input[type="radio"]:checked + label:before {
   height: 20%;
 }
 .img-signature {
-  width: 150px auto;
-  height: 100px auto;
+  width: 250px;
+  height: 160px;
 }
 .modal-signature {
   color: #35599a;
   cursor: pointer;
 }
-.modal-header img {
-  width: 35px;
-  height: 35px;
-}
+
 .modal-title {
 }
 .sigCanvas {
@@ -1947,6 +2014,7 @@ a {
   height: 10vh;
   padding: 1.5%;
   width: 100%;
+  background-color: grey;
 }
 .list-group-item-warning {
   border-bottom: 1px solid rgba(0, 0, 0, 0.377);
@@ -1958,6 +2026,10 @@ a {
 .list-group-item-info .col {
   display: flex;
 }
+.button-certificate {
+  margin-bottom: 2vh;
+}
+
 .list-group-item-danger .col {
   display: flex;
 }
@@ -2146,11 +2218,15 @@ select {
   height: 32px;
   cursor: pointer;
 }
+.att {
+  margin-top: 5%;
+}
 
 .img-backbutton {
   width: 24px;
   height: 24px;
   cursor: pointer;
+  margin-left: 10px;
 }
 .img-backbutton:hover {
   background-color: #3a39390c;

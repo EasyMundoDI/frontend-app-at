@@ -3,6 +3,7 @@ import Loading from "../components/Loading";
 import api from "../services/api";
 import moment from "moment";
 import $ from "jquery";
+import Folder2 from "../images/add.png";
 import searchconclude from "../images/searchimg.png";
 import { useParams } from "react-router-dom";
 import hashids from "hashids";
@@ -16,6 +17,7 @@ import Folder1 from "../images/folder1.png";
 import trash from "../images/trash.png";
 import Filegeneric from "../images/filegeneric.png";
 import move from "../images/move.png";
+import world from "../images/world.png";
 import { cpfMask, phoneMask } from "../util/Mask";
 import Axios from "axios";
 const hash = new hashids("", 35);
@@ -40,6 +42,7 @@ function PasteOrganization() {
   const [loading2, setLoading2] = useState(true);
   const [loading3, setLoading3] = useState(true);
   const [display, setDisplay] = useState(false);
+  const [paste, setPaste] = useState([]);
   const [orgsPastes, setOrgPastes] = useState([]);
   const currentRef = useRef(0);
 
@@ -152,7 +155,7 @@ function PasteOrganization() {
       checkvalue2.forEach((element, i, array) => {
         count++;
         api.get(`/user/paste/${hash.encode(element.id)}`).then((result) => {
-          if (result.data.length < 1) {
+          if (result.data === null) {
             api
               .post(`/user/pendingPaste/${element.id}`, {
                 paste: $("#select-customoption option:selected").val(),
@@ -258,41 +261,20 @@ function PasteOrganization() {
         });
     });
   }
-
-  $(".inputsigned").click(function () {
-    var selectedSigned = new Array();
-    var n = $(".inputsigned:checked").val();
-
-    if (n > 0) {
-      $(".inputsigned:checked").each(function () {
-        selectedSigned.push({
-          id: $(this).val(),
-          name: $(this).data("name"),
-          description: $(this).data("description"),
-        });
+  function configPaste() {
+    var nome = document.getElementById("form28").value;
+    var description = document.getElementById("form29").value;
+    api
+      .put(`/user/${newid}/userpaste/${nome}/${description}`)
+      .then((result) => {
+        window.location.reload(false);
       });
-    }
-    setCheckValue(selectedSigned);
-  });
+  }
+
   function backbutton() {
     window.history.back();
   }
 
-  $(".inputpending").click(function () {
-    var selectedSigned = new Array();
-    var n = $(".inputpending:checked").val();
-
-    if (n > 0) {
-      $(".inputpending:checked").each(function () {
-        selectedSigned.push({
-          id: $(this).val(),
-          name: $(this).data("name"),
-          description: $(this).data("description"),
-        });
-      });
-    }
-    setCheckValue2(selectedSigned);
-  });
   function myFunction() {
     // Declare variables
     var input, filter, ul, li, a, i, txtValue;
@@ -340,6 +322,75 @@ function PasteOrganization() {
     </div>
   ) : (
     <div className="main-container">
+      <div
+        className="modal fade"
+        id="modalLoginAvatar"
+        tabIndex="-1"
+        role="dialog"
+        aria-labelledby="myModalLabel"
+        aria-hidden="true"
+      >
+        <div
+          className="modal-dialog cascading-modal modal-avatar modal-sm"
+          role="document"
+        >
+          <div className="modal-content">
+            <div className="modal-header">
+              <img
+                src={world}
+                alt="avatar"
+                className="rounded-circle img-responsive"
+              />
+            </div>
+
+            <div className="modal-body text-center mb-1">
+              <p>editar configurações da pasta</p>
+              <p>{orgsPaste.nome}</p>
+
+              <div className="md-form ml-0 mr-0">
+                <input
+                  type="text"
+                  id="form28"
+                  className="form-control form-control-sm validate ml-0"
+                />
+                <label
+                  data-error="wrong"
+                  data-success="right"
+                  htmlFor="form28"
+                  className="ml-0"
+                >
+                  nome
+                </label>
+              </div>
+              <div className="md-form ml-0 mr-0">
+                <input
+                  type="text"
+                  id="form29"
+                  className="form-control form-control-sm validate ml-0"
+                />
+                <label
+                  data-error="wrong"
+                  data-success="right"
+                  htmlFor="form29"
+                  className="ml-0"
+                >
+                  descrição
+                </label>
+
+                <div className="text-center mt-4">
+                  <button
+                    onClick={() => configPaste()}
+                    className="btn btn-cyan mt-1"
+                    id="adicionarnumero"
+                  >
+                    adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div
         class="modal fade"
         id="exampleModalpending"
@@ -399,13 +450,13 @@ function PasteOrganization() {
         id="exampleModalsigned"
         tabIndex="-1"
         role="dialog"
-        aria-labelledby="exampleModalLabel"
+        aria-labelledby="exampleModalLabel2"
         aria-hidden="true"
       >
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="exampleModalLabel">
+              <h5 class="modal-title" id="exampleModalLabel2">
                 <img src={warning} alt="" /> excluir documentos
               </h5>
               <button
@@ -775,7 +826,19 @@ function PasteOrganization() {
               {loading3 === true ? (
                 <div>
                   <Loading />
-                  <p>selecione uma pasta</p>
+                  <p>selecione uma pasta ou crie uma</p>
+                  <a
+                    href="/"
+                    data-toggle="modal"
+                    data-target="#modalLoginAvatar"
+                  >
+                    <img
+                      className="img-fluid img-paste"
+                      id="img-paste"
+                      src={Folder2}
+                      alt=""
+                    />
+                  </a>
                 </div>
               ) : (
                 <div>
@@ -944,6 +1007,27 @@ function PasteOrganization() {
                                 data-name={iten.nome}
                                 data-description={iten.description}
                                 onChange={function () {
+                                  $(".inputsigned").each(function () {
+                                    this.checked = false;
+                                  });
+                                  setDisplay2(false);
+                                  var selectedSigned = new Array();
+                                  var n = $(".inputpending:checked").val();
+
+                                  if (n > 0) {
+                                    $(".inputpending:checked").each(
+                                      function () {
+                                        selectedSigned.push({
+                                          id: $(this).val(),
+                                          name: $(this).data("name"),
+                                          description: $(this).data(
+                                            "description"
+                                          ),
+                                        });
+                                      }
+                                    );
+                                  }
+                                  setCheckValue2(selectedSigned);
                                   const a = document.querySelectorAll(
                                     "input:checked"
                                   );
@@ -1038,13 +1122,32 @@ function PasteOrganization() {
                             <div className="col ">
                               <input
                                 type="checkbox"
-                                id={iten.id}
+                                id={iten.uniqueCod}
                                 name="type"
                                 className="inputsigned"
                                 value={iten.id}
                                 data-name={iten.nome}
                                 data-description={iten.description}
                                 onChange={function () {
+                                  $(".inputpending").each(function () {
+                                    this.checked = false;
+                                  });
+                                  setDisplay(false);
+                                  var selectedSigned = new Array();
+                                  var n = $(".inputsigned:checked").val();
+
+                                  if (n > 0) {
+                                    $(".inputsigned:checked").each(function () {
+                                      selectedSigned.push({
+                                        id: $(this).val(),
+                                        name: $(this).data("name"),
+                                        description: $(this).data(
+                                          "description"
+                                        ),
+                                      });
+                                    });
+                                  }
+                                  setCheckValue(selectedSigned);
                                   const c = document.querySelectorAll(
                                     "input:checked"
                                   );
@@ -1057,7 +1160,7 @@ function PasteOrganization() {
                                 }}
                               />{" "}
                               <label
-                                htmlFor={iten.id}
+                                htmlFor={iten.uniqueCod}
                                 className="list-nome-types"
                               ></label>
                               <a

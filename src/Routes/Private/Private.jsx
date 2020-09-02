@@ -27,6 +27,10 @@ const RoutesPrivate = ({ component: Component, ...rest }) => {
       });
   }, []);
 
+  function gotoPerfil() {
+    history.push("/dashboard/Profile");
+  }
+
   return (
     <Route
       {...rest}
@@ -49,7 +53,9 @@ const RoutesPrivate = ({ component: Component, ...rest }) => {
                 {loading === true ? (
                   <Loading />
                 ) : (
-                  <h4>{infoUser.nome.split(" ").slice(0, 2).join(" ")}</h4>
+                  <button className="btn btn-dark" onClick={() => gotoPerfil()}>
+                    {infoUser.nome.split(" ").slice(0, 2).join(" ")}
+                  </button>
                 )}
                 <ul>
                   <li>
@@ -84,9 +90,9 @@ const RoutesPrivate = ({ component: Component, ...rest }) => {
                   <i className="far fa-building"></i>
                   <span>Organizações</span>
                 </a>
-                <a href="/">
+                <a href="/dashboard/fastSignature">
                   <i className="fas fa-pen"></i>
-                  <span>Validar Documentos</span>
+                  <span>Assinatura rápida</span>
                 </a>
               </div>
             </div>

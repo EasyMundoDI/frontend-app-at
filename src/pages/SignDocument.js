@@ -4,7 +4,6 @@ import api from "../services/api";
 import moment from "moment";
 import logo from "../images/Mundo_Digital_Logo_Fundo_Transparente.png";
 import world from "../images/logo_world.png";
-import { degrees, PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 import { jsPDF } from "jspdf";
 import { cpfMask, phoneMask } from "../util/Mask";
@@ -77,7 +76,6 @@ function SignDocument() {
                       setCurrentFile(result.data);
                       setFindPending(pendingRes.data);
                       setFindUser(findInfo.data);
-
                       setCurrentOrder(findOrdens.data);
                       setCurrentPaste(findPaste.data);
                       setCurrentOrg(findOrg.data[0]);
@@ -125,9 +123,6 @@ function SignDocument() {
               }
             }
             loadcertificate();
-            setTimeout(() => {
-              setLoading(false);
-            }, 3000);
           }
         )
       );
@@ -148,159 +143,509 @@ function SignDocument() {
     } else {
       pasteDoc = currentPaste.id;
     }
+    setLoading(true);
+
+    const doc = new jsPDF();
+    doc.setFont("courier");
+    doc.addImage(world, "png", 10, 10, 35, 35);
+    doc.addImage(logo, "png", 60, 15, 90, 25);
+    doc.addImage(
+      `${process.env.REACT_APP_BACKEND_URL}/files/${avatar.key}`,
+      "txt",
+      5,
+      95,
+      70,
+      40
+    );
+    doc.setFontSize(14);
+    doc.text(33, 70, "Código de validação: UHZR6-598KG-PN2UF-RTS75 ");
+    doc.setFontSize(22);
+    doc.text(35, 60, "MANIFESTO DE ASSINATURAS");
+    doc.setFontSize(9);
+    doc.setFont("helvetica");
+    doc.text(40, 79, `documento submetido por ${findPending.submetido}.`);
+    doc.text(5, 93, "documento aprovado por :");
+
+    const date = new Date();
+    doc.text(
+      5,
+      170,
+      `documento aprovado por ${currentOrder[0].nome} cpf:${
+        currentOrder[0].cpf
+      } em ${moment(date).format("DD-MM-YY HH:mm:ss")}`
+    );
+    doc.setDrawColor(61, 146, 194);
+    doc.setFontSize(10);
+    doc.line(98, 196, 170, 196);
+    doc.line(98, 202, 170, 202);
+    doc.line(31, 215, 196, 215);
+    doc.line(31, 222, 196, 222);
+    doc.setFont("courier");
+    doc.text(
+      5,
+      200,
+      "Para verificar as assinaturas acesse  http://easydoc-mundodigital.azurewebsites.net/validate "
+    );
+    doc.text(
+      5,
+      220,
+      "ou acesse http://easydoc-mundodigital.azurewebsites.net/validate/IWJEI-WKEOWK-OWKEO-WOKEO "
+    );
+
+    var string = doc.output("datauristring");
+    function srcToFile(src, fileName, mimeType) {
+      return fetch(src)
+        .then((res) => res.arrayBuffer())
+        .then((buf) => new File([buf], fileName, { type: mimeType }));
+    }
 
     if (currentOrder[0].cpf === findUser.cpf) {
-      api
-        .put(`/user/${findPending.id}/pending/${currentFile.key}`)
-        .then((result) => {
-          api
-            .put(`/user/${currentOrder[0].id}/pending`, {
-              conclude: true,
-            })
-            .then((result) => {
-              api
-                .post(`/user/signedDocument`, {
-                  orgDoc,
-                  pasteDoc,
-                  file: findPending.file,
-                  url: currentFile.key,
-                  nome: findPending.nome,
-                  action: findPending.action,
-                  key: currentFile.key,
-                  status: 0,
-                  submetido: findPending.submetido,
-                  descriptionDoc: findPending.description,
-                  uniqueCod: findPending.uniqueCod,
-                })
-                .then((result) => {
-                  currentOrder.forEach((element, i, array) => {
-                    api
-                      .post(`/ordem/signed/${result.data.id}`, {
-                        email: element.email,
-                        nome: element.nome,
-                        cpf: element.cpf,
-                        conclude: element.conclude,
-                        type: element.type,
-                      })
-                      .then((resultc) => {
-                        api.post(`/ordem/signed/${result.data.id}`, {
-                          email: array[0].email,
-                          nome: array[0].nome,
-                          cpf: array[0].cpf,
+      api.get(`pendingEletronic/${findPending.id}`).then((resultDoc) => {
+        srcToFile(string, `${findPending.nome}`, "application/pdf").then(
+          (file) => {
+            const fd = new FormData();
+            fd.append("userfile", file);
+            return api
+              .post(
+                `/uploadEletronic/${currentFile.key}/${findPending.id}`,
+                fd,
+                {
+                  nome: "signature",
+                  size: file.size,
+                }
+              )
+              .then((resultEletronic) => {
+                if (resultDoc.data.eletronicPendings === null) {
+                  api
+                    .put(
+                      `/user/${findPending.id}/pending/${resultEletronic.data.key}`
+                    )
+                    .then((result) => {
+                      api
+                        .put(`/user/${currentOrder[0].id}/pending`, {
                           conclude: true,
-                          type: array[0].type,
+                        })
+                        .then((result) => {
+                          api
+                            .post(`/user/signedDocument`, {
+                              orgDoc,
+                              pasteDoc,
+                              file: findPending.file,
+                              url: currentFile.key,
+                              nome: findPending.nome,
+                              action: findPending.action,
+                              key: resultEletronic.data.key,
+                              status: 0,
+                              submetido: findPending.submetido,
+                              descriptionDoc: findPending.description,
+                              uniqueCod: findPending.uniqueCod,
+                            })
+                            .then((result) => {
+                              currentOrder.forEach((element, i, array) => {
+                                api
+                                  .post(`/ordem/signed/${result.data.id}`, {
+                                    email: element.email,
+                                    nome: element.nome,
+                                    cpf: element.cpf,
+                                    conclude: element.conclude,
+                                    type: element.type,
+                                  })
+                                  .then((resultc) => {
+                                    api.post(
+                                      `/ordem/signed/${result.data.id}`,
+                                      {
+                                        email: array[0].email,
+                                        nome: array[0].nome,
+                                        cpf: array[0].cpf,
+                                        conclude: true,
+                                        type: array[0].type,
+                                      }
+                                    );
+                                  })
+                                  .then((resultaaa) => {
+                                    if (currentOrder.length === 1) {
+                                      api.put(
+                                        `/user/signedStatus/${result.data.id}`
+                                      );
+                                      api.delete(`/user/${id}/pending`);
+                                      history.push(
+                                        `/dashboard/document/signed/${hash.encode(
+                                          result.data.id
+                                        )}`
+                                      );
+                                    } else {
+                                      if (
+                                        currentOrder[1].signature === "strange"
+                                      ) {
+                                        api.post(
+                                          `/eletronic/strange/${currentOrder[1].email}`,
+
+                                          {
+                                            idConclude: hash.encode(
+                                              result.data.id
+                                            ),
+                                            nome: currentOrder[1].nome,
+                                            pendingNome: findPending.nome,
+                                            pendingDesc:
+                                              findPending.description,
+                                          }
+                                        );
+                                      } else {
+                                        api.post(
+                                          `/email/eletronic/signature/${currentOrder[1].email}`,
+                                          {
+                                            idConclude: hash.encode(
+                                              result.data.id
+                                            ),
+                                            nome: currentOrder[1].nome,
+                                            pendingNome: findPending.nome,
+                                            pendingDesc:
+                                              findPending.description,
+                                          }
+                                        );
+                                      }
+
+                                      api.put(
+                                        `/user/${currentOrder[1].cpf}/ordem/${currentOrder[1].id}`
+                                      );
+                                      history.push(
+                                        `/dashboard/document/signed/${hash.encode(
+                                          result.data.id
+                                        )}`
+                                      );
+                                    }
+                                  });
+                              });
+                            });
                         });
-                      })
-                      .then((resultaaa) => {
-                        if (currentOrder.length === 1) {
-                          api.put(`/user/signedStatus/${result.data.id}`);
-                          api.delete(`/user/${id}/pending`);
-                          history.push(
-                            `/dashboard/document/signed/${hash.encode(
-                              result.data.id
-                            )}`
-                          );
-                        } else {
-                          if (currentOrder[1].signature === "strange") {
-                            api.post(
-                              `/eletronic/strange/${currentOrder[1].email}`,
-                              {
-                                idConclude: hash.encode(result.data.id),
-                                idPending,
-                              }
-                            );
-                            api.post(``);
-                          } else {
-                            api.post(
-                              `/eletronic/signature/${currentOrder[1].email}`
-                            );
-                          }
+                    });
+                } else {
+                  api
+                    .post(
+                      `/eletronic/pending/${findPending.signedFile}/${findPending.id}/${findUser.id}/aprovado`
+                    )
+                    .then((resultEletronic) => {
+                      api
+                        .put(
+                          `/user/${findPending.id}/pending/${resultEletronic.data}`
+                        )
+                        .then((result) => {
+                          api
+                            .put(`/user/${currentOrder[0].id}/pending`, {
+                              conclude: true,
+                            })
+                            .then((result) => {
+                              api
+                                .post(`/user/signedDocument`, {
+                                  orgDoc,
+                                  pasteDoc,
+                                  file: findPending.file,
+                                  url: currentFile.key,
+                                  nome: findPending.nome,
+                                  action: findPending.action,
+                                  key: resultEletronic.data.key,
+                                  status: 0,
+                                  submetido: findPending.submetido,
+                                  descriptionDoc: findPending.description,
+                                  uniqueCod: findPending.uniqueCod,
+                                })
+                                .then((result) => {
+                                  currentOrder.forEach((element, i, array) => {
+                                    api
+                                      .post(`/ordem/signed/${result.data.id}`, {
+                                        email: element.email,
+                                        nome: element.nome,
+                                        cpf: element.cpf,
+                                        conclude: element.conclude,
+                                        type: element.type,
+                                      })
+                                      .then((resultc) => {
+                                        api.post(
+                                          `/ordem/signed/${result.data.id}`,
+                                          {
+                                            email: array[0].email,
+                                            nome: array[0].nome,
+                                            cpf: array[0].cpf,
+                                            conclude: true,
+                                            type: array[0].type,
+                                          }
+                                        );
+                                      })
+                                      .then((resultaaa) => {
+                                        if (currentOrder.length === 1) {
+                                          api.put(
+                                            `/user/signedStatus/${result.data.id}`
+                                          );
+                                          api.delete(`/user/${id}/pending`);
+                                          history.push(
+                                            `/dashboard/document/signed/${hash.encode(
+                                              result.data.id
+                                            )}`
+                                          );
+                                        } else {
+                                          if (
+                                            currentOrder[1].signature ===
+                                            "strange"
+                                          ) {
+                                            api.post(
+                                              `/eletronic/strange/${currentOrder[1].email}`,
 
-                          api.put(
-                            `/user/${currentOrder[1].cpf}/ordem/${currentOrder[1].id}`
-                          );
-                          history.push(
-                            `/dashboard/document/signed/${hash.encode(
-                              result.data.id
-                            )}`
-                          );
-                        }
-                      });
-                  });
-                });
-            });
-        });
+                                              {
+                                                idConclude: hash.encode(
+                                                  result.data.id
+                                                ),
+                                                nome: currentOrder[1].nome,
+                                                pendingNome: findPending.nome,
+                                                pendingDesc:
+                                                  findPending.description,
+                                              }
+                                            );
+                                          } else {
+                                            api.post(
+                                              `/email/eletronic/signature/${currentOrder[1].email}`,
+                                              {
+                                                idConclude: hash.encode(
+                                                  result.data.id
+                                                ),
+                                                nome: currentOrder[1].nome,
+                                                pendingNome: findPending.nome,
+                                                pendingDesc:
+                                                  findPending.description,
+                                              }
+                                            );
+                                          }
+
+                                          api.put(
+                                            `/user/${currentOrder[1].cpf}/ordem/${currentOrder[1].id}`
+                                          );
+                                          history.push(
+                                            `/dashboard/document/signed/${hash.encode(
+                                              result.data.id
+                                            )}`
+                                          );
+                                        }
+                                      });
+                                  });
+                                });
+                            });
+                        });
+                    });
+                }
+              });
+          }
+        );
+      });
     } else if (currentOrder[1].cpf === findUser.cpf) {
-      api
-        .put(`/user/${findPending.id}/pending/${findPending.signedFile}`)
-        .then((result) => {
-          api
-            .put(`/user/${currentOrder[1].id}/pending`, {
-              conclude: true,
-            })
-            .then((result) => {
-              api
-                .post(`/user/signedDocument`, {
-                  orgDoc,
-                  pasteDoc,
-                  file: findPending.file,
-                  url: currentFile.key,
-                  nome: findPending.nome,
-                  action: findPending.action,
-                  key: findPending.signedFile,
-                  status: 0,
-                  submetido: findPending.submetido,
-                  descriptionDoc: findPending.description,
-                  uniqueCod: findPending.uniqueCod,
-                })
-                .then((result) => {
-                  currentOrder.forEach((element, i, array) => {
-                    api.post(`/ordem/signed/${result.data.id}`, {
-                      email: array[0].email,
-                      nome: array[0].nome,
-                      cpf: array[0].cpf,
-                      conclude: true,
-                      type: array[0].type,
-                    });
-                    api.post(`/ordem/signed/${result.data.id}`, {
-                      email: array[1].email,
-                      nome: array[1].nome,
-                      cpf: array[1].cpf,
-                      conclude: true,
-                      type: array[1].type,
-                    });
-                  });
+      api.get(`pendingEletronic/${findPending.id}`).then((resultDoc) => {
+        srcToFile(string, `${findPending.nome}`, "application/pdf").then(
+          (file) => {
+            const fd = new FormData();
+            fd.append("userfile", file);
+            return api
+              .post(
+                `/uploadEletronic/${currentFile.key}/${findPending.id}`,
+                fd,
+                {
+                  nome: "signature",
+                  size: file.size,
+                }
+              )
+              .then((resultEletronic) => {
+                if (resultDoc.data.eletronicPendings === null) {
+                  api
+                    .put(
+                      `/user/${findPending.id}/pending/${resultEletronic.data.key}`
+                    )
+                    .then((result) => {
+                      api
+                        .put(`/user/${currentOrder[1].id}/pending`, {
+                          conclude: true,
+                        })
+                        .then((result) => {
+                          api
+                            .post(`/user/signedDocument`, {
+                              orgDoc,
+                              pasteDoc,
+                              file: findPending.file,
+                              url: currentFile.key,
+                              nome: findPending.nome,
+                              action: findPending.action,
+                              key: resultEletronic.data.key,
+                              status: 0,
+                              submetido: findPending.submetido,
+                              descriptionDoc: findPending.description,
+                              uniqueCod: findPending.uniqueCod,
+                            })
+                            .then((result) => {
+                              currentOrder.forEach((element, i, array) => {
+                                api.post(`/ordem/signed/${result.data.id}`, {
+                                  email: array[0].email,
+                                  nome: array[0].nome,
+                                  cpf: array[0].cpf,
+                                  conclude: true,
+                                  type: array[0].type,
+                                });
+                                api.post(`/ordem/signed/${result.data.id}`, {
+                                  email: array[1].email,
+                                  nome: array[1].nome,
+                                  cpf: array[1].cpf,
+                                  conclude: true,
+                                  type: array[1].type,
+                                });
+                              });
 
-                  if (currentOrder.length === 2) {
-                    api.put(`/user/signedStatus/${result.data.id}`);
-                    api.delete(`/user/${id}/pending`);
-                    history.push(
-                      `/dashboard/document/signed/${hash.encode(
-                        result.data.id
-                      )}`
-                    );
-                  } else {
-                    if (currentOrder[2].signature === "strange") {
-                      api.post(`/eletronic/strange/${currentOrder[2].email}`, {
-                        idPending,
-                        idConclude: hash.encode(result.data.id),
-                      });
-                    } else {
-                      api.post(`/eletronic/signature/${currentOrder[2].email}`);
-                    }
+                              if (currentOrder.length === 2) {
+                                api.put(`/user/signedStatus/${result.data.id}`);
+                                api.delete(`/user/${id}/pending`);
+                                history.push(
+                                  `/dashboard/document/signed/${hash.encode(
+                                    result.data.id
+                                  )}`
+                                );
+                              } else {
+                                if (currentOrder[2].signature === "strange") {
+                                  api.post(
+                                    `/eletronic/strange/${currentOrder[2].email}`,
+                                    {
+                                      idPending,
+                                      idConclude: hash.encode(result.data.id),
+                                    }
+                                  );
+                                } else {
+                                  api.post(
+                                    `/email/eletronic/signature/${currentOrder[2].email}`,
+                                    {
+                                      idConclude: hash.encode(result.data.id),
+                                      nome: currentOrder[1].nome,
+                                      pendingNome: findPending.nome,
+                                      pendingDesc: findPending.description,
+                                    }
+                                  );
+                                }
 
-                    api.put(
-                      `/user/${currentOrder[2].cpf}/ordem/${currentOrder[2].id}`
-                    );
-                    history.push(
-                      `/dashboard/document/signed/${hash.encode(
-                        result.data.id
-                      )}`
-                    );
-                  }
-                });
-            });
-        });
+                                api.put(
+                                  `/user/${currentOrder[2].cpf}/ordem/${currentOrder[2].id}`
+                                );
+                                history.push(
+                                  `/dashboard/document/signed/${hash.encode(
+                                    result.data.id
+                                  )}`
+                                );
+                              }
+                            });
+                        });
+                    });
+                } else {
+                  api
+                    .post(
+                      `/eletronic/pending/${findPending.signedFile}/${findPending.id}/${findUser.id}/aprovado`
+                    )
+                    .then((resultEletronic) => {
+                      api
+                        .put(
+                          `/user/${findPending.id}/pending/${resultEletronic.data}`
+                        )
+                        .then((result) => {
+                          api
+                            .put(`/user/${currentOrder[1].id}/pending`, {
+                              conclude: true,
+                            })
+                            .then((result) => {
+                              api
+                                .post(`/user/signedDocument`, {
+                                  orgDoc,
+                                  pasteDoc,
+                                  file: findPending.file,
+                                  url: currentFile.key,
+                                  nome: findPending.nome,
+                                  action: findPending.action,
+                                  key: resultEletronic.data.key,
+                                  status: 0,
+                                  submetido: findPending.submetido,
+                                  descriptionDoc: findPending.description,
+                                  uniqueCod: findPending.uniqueCod,
+                                })
+                                .then((result) => {
+                                  currentOrder.forEach((element, i, array) => {
+                                    api.post(
+                                      `/ordem/signed/${result.data.id}`,
+                                      {
+                                        email: array[0].email,
+                                        nome: array[0].nome,
+                                        cpf: array[0].cpf,
+                                        conclude: true,
+                                        type: array[0].type,
+                                      }
+                                    );
+                                    api.post(
+                                      `/ordem/signed/${result.data.id}`,
+                                      {
+                                        email: array[1].email,
+                                        nome: array[1].nome,
+                                        cpf: array[1].cpf,
+                                        conclude: true,
+                                        type: array[1].type,
+                                      }
+                                    );
+                                  });
+
+                                  if (currentOrder.length === 2) {
+                                    api.put(
+                                      `/user/signedStatus/${result.data.id}`
+                                    );
+                                    api.delete(`/user/${id}/pending`);
+                                    history.push(
+                                      `/dashboard/document/signed/${hash.encode(
+                                        result.data.id
+                                      )}`
+                                    );
+                                  } else {
+                                    if (
+                                      currentOrder[2].signature === "strange"
+                                    ) {
+                                      api.post(
+                                        `/eletronic/strange/${currentOrder[2].email}`,
+                                        {
+                                          idConclude: hash.encode(
+                                            result.data.id
+                                          ),
+                                          nome: currentOrder[1].nome,
+                                          pendingNome: findPending.nome,
+                                          pendingDesc: findPending.description,
+                                        }
+                                      );
+                                    } else {
+                                      api.post(
+                                        `/email/eletronic/signature/${currentOrder[2].email}`,
+                                        {
+                                          idConclude: hash.encode(
+                                            result.data.id
+                                          ),
+                                          nome: currentOrder[1].nome,
+                                          pendingNome: findPending.nome,
+                                          pendingDesc: findPending.description,
+                                        }
+                                      );
+                                    }
+
+                                    api.put(
+                                      `/user/${currentOrder[2].cpf}/ordem/${currentOrder[2].id}`
+                                    );
+                                    history.push(
+                                      `/dashboard/document/signed/${hash.encode(
+                                        result.data.id
+                                      )}`
+                                    );
+                                  }
+                                });
+                            });
+                        });
+                    });
+                }
+              });
+          }
+        );
+      });
     } else if (currentOrder[2].cpf === findUser.cpf) {
       api
         .put(`/user/${findPending.id}/pending/${findPending.signedFile}`)
@@ -364,7 +709,9 @@ function SignDocument() {
                         idConclude: hash.encode(result.data.id),
                       });
                     } else {
-                      api.post(`/eletronic/signature/${currentOrder[3].email}`);
+                      api.post(
+                        `/email/eletronic/signature/${currentOrder[3].email}`
+                      );
                     }
 
                     api.put(
@@ -449,7 +796,9 @@ function SignDocument() {
                         idConclude: hash.encode(result.data.id),
                       });
                     } else {
-                      api.post(`/eletronic/signature/${currentOrder[4].email}`);
+                      api.post(
+                        `/email/eletronic/signature/${currentOrder[4].email}`
+                      );
                     }
 
                     api.put(
@@ -541,7 +890,9 @@ function SignDocument() {
                         idConclude: hash.encode(result.data.id),
                       });
                     } else {
-                      api.post(`/eletronic/signature/${currentOrder[5].email}`);
+                      api.post(
+                        `/email/eletronic/signature/${currentOrder[5].email}`
+                      );
                     }
 
                     api.put(
@@ -640,7 +991,9 @@ function SignDocument() {
                         idConclude: hash.encode(result.data.id),
                       });
                     } else {
-                      api.post(`/eletronic/signature/${currentOrder[6].email}`);
+                      api.post(
+                        `/email/eletronic/signature/${currentOrder[6].email}`
+                      );
                     }
 
                     api.put(
@@ -746,7 +1099,9 @@ function SignDocument() {
                         idConclude: hash.encode(result.data.id),
                       });
                     } else {
-                      api.post(`/eletronic/signature/${currentOrder[7].email}`);
+                      api.post(
+                        `/email/eletronic/signature/${currentOrder[7].email}`
+                      );
                     }
 
                     api.put(
@@ -870,40 +1225,193 @@ function SignDocument() {
       pasteDoc = currentPaste.id;
     }
     setLoading(true);
+
+    const doc = new jsPDF();
+    doc.setFont("courier");
+    doc.addImage(world, "png", 10, 10, 35, 35);
+    doc.addImage(logo, "png", 60, 15, 90, 25);
+    doc.addImage(
+      `${process.env.REACT_APP_BACKEND_URL}/files/${avatar.key}`,
+      "txt",
+      5,
+      95,
+      70,
+      40
+    );
+    doc.setFontSize(14);
+    doc.text(33, 70, "Código de validação: UHZR6-598KG-PN2UF-RTS75 ");
+    doc.setFontSize(22);
+    doc.text(35, 60, "MANIFESTO DE ASSINATURAS");
+    doc.setFontSize(9);
+    doc.setFont("helvetica");
+    doc.text(40, 79, `documento submetido por ${findPending.submetido}.`);
+    doc.text(5, 93, "documento assinado por :");
+
+    const date = new Date();
+    doc.text(
+      5,
+      170,
+      `documento assinado eletronicamente por ${currentOrder[0].nome} cpf:${
+        currentOrder[0].cpf
+      } em ${moment(date).format("DD-MM-YY HH:mm:ss")}`
+    );
+    doc.setDrawColor(61, 146, 194);
+    doc.setFontSize(10);
+    doc.line(98, 196, 170, 196);
+    doc.line(98, 202, 170, 202);
+    doc.line(31, 215, 196, 215);
+    doc.line(31, 222, 196, 222);
+    doc.setFont("courier");
+    doc.text(
+      5,
+      200,
+      "Para verificar as assinaturas acesse  http://easydoc-mundodigital.azurewebsites.net/validate "
+    );
+    doc.text(
+      5,
+      220,
+      "ou acesse http://easydoc-mundodigital.azurewebsites.net/validate/IWJEI-WKEOWK-OWKEO-WOKEO "
+    );
+    var string = doc.output("datauristring");
+
+    function srcToFile(src, fileName, mimeType) {
+      return fetch(src)
+        .then((res) => res.arrayBuffer())
+        .then((buf) => new File([buf], fileName, { type: mimeType }));
+    }
     if (currentOrder[0].cpf === findUser.cpf) {
-      const doc = new jsPDF();
-      doc.addImage(world, "png", 10, 10, 35, 35);
-      doc.addImage(logo, "png", 60, 20, 80, 25);
-      doc.setFontSize(10);
-      doc.addImage(
-        `${process.env.REACT_APP_BACKEND_URL}/files/${avatar.key}`,
-        "txt",
-        10,
-        78,
-        60,
-        38
-      );
+      api.get(`pendingEletronic/${findPending.id}`).then((resultDoc) => {
+        if (resultDoc.data.eletronicPendings === null) {
+          srcToFile(string, `${findPending.nome}.pdf`, "application/pdf").then(
+            (file) => {
+              const fd = new FormData();
+              fd.append("userfile", file);
+              return api
+                .post(
+                  `/uploadEletronic/${currentFile.key}/${findPending.id}/${findUser.id}/assinado`,
+                  fd,
+                  {
+                    nome: "signature",
+                    size: file.size,
+                  }
+                )
+                .then((resultEletronic) => {
+                  api
+                    .put(
+                      `/user/${findPending.id}/pending/${resultEletronic.data.key}`
+                    )
+                    .then((result) => {
+                      api
+                        .put(`/user/${currentOrder[0].id}/pending`, {
+                          conclude: true,
+                        })
+                        .then((result) => {
+                          api
+                            .post(`/user/signedDocument`, {
+                              orgDoc,
+                              pasteDoc,
+                              file: findPending.file,
+                              url: currentFile.key,
+                              nome: findPending.nome,
+                              action: findPending.action,
+                              key: resultEletronic.data.key.replace(/ /g, ""),
+                              status: 0,
+                              submetido: findPending.submetido,
+                              descriptionDoc: findPending.description,
+                              uniqueCod: findPending.uniqueCod,
+                            })
+                            .then((result) => {
+                              currentOrder.forEach((element, i, array) => {
+                                api
+                                  .post(`/ordem/signed/${result.data.id}`, {
+                                    email: element.email,
+                                    nome: element.nome,
+                                    cpf: element.cpf,
+                                    conclude: element.conclude,
+                                    type: element.type,
+                                  })
+                                  .then((resultc) => {
+                                    api.post(
+                                      `/ordem/signed/${result.data.id}`,
+                                      {
+                                        email: array[0].email,
+                                        nome: array[0].nome,
+                                        cpf: array[0].cpf,
+                                        conclude: true,
+                                        type: array[0].type,
+                                      }
+                                    );
+                                  })
+                                  .then((resultaaa) => {
+                                    if (currentOrder.length === 1) {
+                                      api.put(
+                                        `/user/signedStatus/${result.data.id}`
+                                      );
+                                      api.delete(`/user/${id}/pending`);
+                                      history.push(
+                                        `/dashboard/document/signed/${hash.encode(
+                                          result.data.id
+                                        )}`
+                                      );
+                                    } else {
+                                      if (
+                                        currentOrder[1].signature === "strange"
+                                      ) {
+                                        api.post(
+                                          `/eletronic/strange/${currentOrder[1].email}`,
 
-      doc.text(10, 60, `documento submetido por ${findPending.submetido}.`);
+                                          {
+                                            idConclude: hash.encode(
+                                              result.data.id
+                                            ),
+                                            nome: currentOrder[1].nome,
+                                            pendingNome: findPending.nome,
+                                            pendingDesc:
+                                              findPending.description,
+                                          }
+                                        );
+                                      } else {
+                                        api.post(
+                                          `/email/eletronic/signature/${currentOrder[1].email}`,
+                                          {
+                                            idConclude: hash.encode(
+                                              result.data.id
+                                            ),
+                                            nome: currentOrder[1].nome,
+                                            pendingNome: findPending.nome,
+                                            pendingDesc:
+                                              findPending.description,
+                                          }
+                                        );
+                                      }
 
-      doc.text(
-        10,
-        150,
-        `documento assinado por ${currentOrder[0].nome} cpf:${currentOrder[0].cpf}`
-      );
-      var string = doc.output("datauristring");
-      srcToFile(string, `${findUser.nome}.pdf`, "application/pdf").then(
-        (file) => {
-          const fd = new FormData();
-          fd.append("userfile", file);
-          return api
-            .post(`/uploadEletronic/${currentFile.key}`, fd, {
-              nome: "signature",
-              size: file.size,
-            })
+                                      api.put(
+                                        `/user/${currentOrder[1].cpf}/ordem/${currentOrder[1].id}`
+                                      );
+                                      history.push(
+                                        `/dashboard/document/signed/${hash.encode(
+                                          result.data.id
+                                        )}`
+                                      );
+                                    }
+                                  });
+                              });
+                            });
+                        });
+                    });
+                });
+            }
+          );
+        } else {
+          api
+            .post(
+              `/eletronic/pending/${findPending.signedFile}/${findPending.id}/${findUser.id}/assinado`
+            )
             .then((resultEletronic) => {
               api
-                .put(`/user/${findPending.id}/pending/${resultEletronic.data}`)
+                .put(
+                  `/user/${findPending.id}/pending/${resultEletronic.data.key}`
+                )
                 .then((result) => {
                   api
                     .put(`/user/${currentOrder[0].id}/pending`, {
@@ -918,7 +1426,7 @@ function SignDocument() {
                           url: currentFile.key,
                           nome: findPending.nome,
                           action: findPending.action,
-                          key: resultEletronic.data,
+                          key: resultEletronic.data.key.replace(/ /g, ""),
                           status: 0,
                           submetido: findPending.submetido,
                           descriptionDoc: findPending.description,
@@ -958,15 +1466,22 @@ function SignDocument() {
                                   if (currentOrder[1].signature === "strange") {
                                     api.post(
                                       `/eletronic/strange/${currentOrder[1].email}`,
-
                                       {
                                         idConclude: hash.encode(result.data.id),
-                                        idPending,
+                                        nome: currentOrder[1].nome,
+                                        pendingNome: findPending.nome,
+                                        pendingDesc: findPending.description,
                                       }
                                     );
                                   } else {
                                     api.post(
-                                      `/eletronic/signature/${currentOrder[1].email}`
+                                      `/email/eletronic/signature/${currentOrder[1].email}`,
+                                      {
+                                        idConclude: hash.encode(result.data.id),
+                                        nome: currentOrder[1].nome,
+                                        pendingNome: findPending.nome,
+                                        pendingDesc: findPending.description,
+                                      }
                                     );
                                   }
 
@@ -986,12 +1501,203 @@ function SignDocument() {
                 });
             });
         }
-      );
-      function srcToFile(src, fileName, mimeType) {
-        return fetch(src)
-          .then((res) => res.arrayBuffer())
-          .then((buf) => new File([buf], fileName, { type: mimeType }));
-      }
+      });
+    } else if (currentOrder[1].cpf === findUser.cpf) {
+      api.get(`pendingEletronic/${findPending.id}`).then((resultDoc) => {
+        if (resultDoc.data.eletronicPendings === null) {
+          srcToFile(string, `${findPending.nome}.pdf`, "application/pdf").then(
+            (file) => {
+              const fd = new FormData();
+              fd.append("userfile", file);
+              return api
+                .post(
+                  `/uploadEletronic/${currentFile.key}/${findPending.id}/${findUser.id}/assinado`,
+                  fd,
+                  {
+                    nome: "signature",
+                    size: file.size,
+                  }
+                )
+                .then((resultEletronic) => {
+                  api
+                    .put(
+                      `/user/${findPending.id}/pending/${resultEletronic.data.key}`
+                    )
+                    .then((result) => {
+                      api
+                        .put(`/user/${currentOrder[1].id}/pending`, {
+                          conclude: true,
+                        })
+                        .then((result) => {
+                          api
+                            .post(`/user/signedDocument`, {
+                              orgDoc,
+                              pasteDoc,
+                              file: findPending.file,
+                              url: currentFile.key,
+                              nome: findPending.nome,
+                              action: findPending.action,
+                              key: resultEletronic.data.key.replace(/ /g, ""),
+                              status: 0,
+                              submetido: findPending.submetido,
+                              descriptionDoc: findPending.description,
+                              uniqueCod: findPending.uniqueCod,
+                            })
+                            .then((result) => {
+                              currentOrder.forEach((element, i, array) => {
+                                api.post(`/ordem/signed/${result.data.id}`, {
+                                  email: array[0].email,
+                                  nome: array[0].nome,
+                                  cpf: array[0].cpf,
+                                  conclude: true,
+                                  type: array[0].type,
+                                });
+                                api.post(`/ordem/signed/${result.data.id}`, {
+                                  email: array[1].email,
+                                  nome: array[1].nome,
+                                  cpf: array[1].cpf,
+                                  conclude: true,
+                                  type: array[1].type,
+                                });
+                              });
+                              if (currentOrder.length === 2) {
+                                api.put(`/user/signedStatus/${result.data.id}`);
+                                api.delete(`/user/${id}/pending`);
+                                history.push(
+                                  `/dashboard/document/signed/${hash.encode(
+                                    result.data.id
+                                  )}`
+                                );
+                              } else {
+                                if (currentOrder[2].signature === "strange") {
+                                  api.post(
+                                    `/eletronic/strange/${currentOrder[2].email}`,
+
+                                    {
+                                      idConclude: hash.encode(result.data.id),
+                                      nome: currentOrder[1].nome,
+                                      pendingNome: findPending.nome,
+                                      pendingDesc: findPending.description,
+                                    }
+                                  );
+                                } else {
+                                  api.post(
+                                    `/email/eletronic/signature/${currentOrder[2].email}`,
+                                    {
+                                      idConclude: hash.encode(result.data.id),
+                                      nome: currentOrder[1].nome,
+                                      pendingNome: findPending.nome,
+                                      pendingDesc: findPending.description,
+                                    }
+                                  );
+                                }
+
+                                api.put(
+                                  `/user/${currentOrder[2].cpf}/ordem/${currentOrder[2].id}`
+                                );
+                                history.push(
+                                  `/dashboard/document/signed/${hash.encode(
+                                    result.data.id
+                                  )}`
+                                );
+                              }
+                            });
+                        });
+                    });
+                });
+            }
+          );
+        } else {
+          api
+            .post(
+              `/eletronic/pending/${findPending.signedFile}/${findPending.id}/${findUser.id}/assinado`
+            )
+            .then((resultEletronic) => {
+              api
+                .put(`/user/${findPending.id}/pending/${resultEletronic.data}`)
+                .then((result) => {
+                  api
+                    .put(`/user/${currentOrder[1].id}/pending`, {
+                      conclude: true,
+                    })
+                    .then((result) => {
+                      api
+                        .post(`/user/signedDocument`, {
+                          orgDoc,
+                          pasteDoc,
+                          file: findPending.file,
+                          url: currentFile.key,
+                          nome: findPending.nome,
+                          action: findPending.action,
+                          key: resultEletronic.data.replace(/ /g, ""),
+                          status: 0,
+                          submetido: findPending.submetido,
+                          descriptionDoc: findPending.description,
+                          uniqueCod: findPending.uniqueCod,
+                        })
+                        .then((result) => {
+                          currentOrder.forEach((element, i, array) => {
+                            api.post(`/ordem/signed/${result.data.id}`, {
+                              email: array[0].email,
+                              nome: array[0].nome,
+                              cpf: array[0].cpf,
+                              conclude: true,
+                              type: array[0].type,
+                            });
+                            api.post(`/ordem/signed/${result.data.id}`, {
+                              email: array[1].email,
+                              nome: array[1].nome,
+                              cpf: array[1].cpf,
+                              conclude: true,
+                              type: array[1].type,
+                            });
+                          });
+                          if (currentOrder.length === 2) {
+                            api.put(`/user/signedStatus/${result.data.id}`);
+                            api.delete(`/user/${id}/pending`);
+                            history.push(
+                              `/dashboard/document/signed/${hash.encode(
+                                result.data.id
+                              )}`
+                            );
+                          } else {
+                            if (currentOrder[2].signature === "strange") {
+                              api.post(
+                                `/eletronic/strange/${currentOrder[2].email}`,
+                                {
+                                  idConclude: hash.encode(result.data.id),
+                                  nome: currentOrder[1].nome,
+                                  pendingNome: findPending.nome,
+                                  pendingDesc: findPending.description,
+                                }
+                              );
+                            } else {
+                              api.post(
+                                `/email/eletronic/signature/${currentOrder[2].email}`,
+                                {
+                                  idConclude: hash.encode(result.data.id),
+                                  nome: currentOrder[1].nome,
+                                  pendingNome: findPending.nome,
+                                  pendingDesc: findPending.description,
+                                }
+                              );
+                            }
+
+                            api.put(
+                              `/user/${currentOrder[2].cpf}/ordem/${currentOrder[2].id}`
+                            );
+                            history.push(
+                              `/dashboard/document/signed/${hash.encode(
+                                result.data.id
+                              )}`
+                            );
+                          }
+                        });
+                    });
+                });
+            });
+        }
+      });
     }
   }
 
@@ -1082,7 +1788,7 @@ function SignDocument() {
                                     );
                                   } else {
                                     api.post(
-                                      `/eletronic/signature/${currentOrder[1].email}`
+                                      `/email/eletronic/signature/${currentOrder[1].email}`
                                     );
                                   }
 
@@ -1176,7 +1882,7 @@ function SignDocument() {
                             );
                           } else {
                             api.post(
-                              `/eletronic/signature/${currentOrder[2].email}`
+                              `/email/eletronic/signature/${currentOrder[2].email}`
                             );
                           }
 
@@ -1274,7 +1980,7 @@ function SignDocument() {
                             );
                           } else {
                             api.post(
-                              `/eletronic/signature/${currentOrder[3].email}`
+                              `/email/eletronic/signature/${currentOrder[3].email}`
                             );
                           }
 
@@ -1379,7 +2085,7 @@ function SignDocument() {
                             );
                           } else {
                             api.post(
-                              `/eletronic/signature/${currentOrder[4].email}`
+                              `/email/eletronic/signature/${currentOrder[4].email}`
                             );
                           }
 
@@ -1491,7 +2197,7 @@ function SignDocument() {
                             );
                           } else {
                             api.post(
-                              `/eletronic/signature/${currentOrder[5].email}`
+                              `/email/eletronic/signature/${currentOrder[5].email}`
                             );
                           }
 
@@ -1610,7 +2316,7 @@ function SignDocument() {
                             );
                           } else {
                             api.post(
-                              `/eletronic/signature/${currentOrder[6].email}`
+                              `/email/eletronic/signature/${currentOrder[6].email}`
                             );
                           }
 
@@ -1736,7 +2442,7 @@ function SignDocument() {
                             );
                           } else {
                             api.post(
-                              `/eletronic/signature/${currentOrder[7].email}`
+                              `/email/eletronic/signature/${currentOrder[7].email}`
                             );
                           }
 
@@ -1961,7 +2667,7 @@ function SignDocument() {
                                     );
                                   } else {
                                     api.post(
-                                      `/eletronic/signature/${currentOrder[1].email}`
+                                      `/email/eletronic/signature/${currentOrder[1].email}`
                                     );
                                   }
 
@@ -2052,7 +2758,7 @@ function SignDocument() {
                           );
                         } else {
                           api.post(
-                            `/eletronic/signature/${currentOrder[2].email}`
+                            `/email/eletronic/signature/${currentOrder[2].email}`
                           );
                         }
 
@@ -2147,7 +2853,7 @@ function SignDocument() {
                           );
                         } else {
                           api.post(
-                            `/eletronic/signature/${currentOrder[3].email}`
+                            `/email/eletronic/signature/${currentOrder[3].email}`
                           );
                         }
 
@@ -2249,7 +2955,7 @@ function SignDocument() {
                           );
                         } else {
                           api.post(
-                            `/eletronic/signature/${currentOrder[4].email}`
+                            `/email/eletronic/signature/${currentOrder[4].email}`
                           );
                         }
 
@@ -2358,7 +3064,7 @@ function SignDocument() {
                           );
                         } else {
                           api.post(
-                            `/eletronic/signature/${currentOrder[5].email}`
+                            `/email/eletronic/signature/${currentOrder[5].email}`
                           );
                         }
 
@@ -2474,7 +3180,7 @@ function SignDocument() {
                           );
                         } else {
                           api.post(
-                            `/eletronic/signature/${currentOrder[6].email}`
+                            `/email/eletronic/signature/${currentOrder[6].email}`
                           );
                         }
 
@@ -2597,7 +3303,7 @@ function SignDocument() {
                           );
                         } else {
                           api.post(
-                            `/eletronic/signature/${currentOrder[7].email}`
+                            `/email/eletronic/signature/${currentOrder[7].email}`
                           );
                         }
 
@@ -2740,21 +3446,27 @@ function SignDocument() {
     image.src = signature;
     image.onload = function () {
       ctx.drawImage(image2, 0, 0);
-      ctx.drawImage(image, 130, 70, 100, 80);
+      ctx.drawImage(image, 140, 70, 100, 75);
       ctx.fillStyle = "black";
-      ctx.font = "10pt Arial";
-      ctx.fillText("Documento assinado eletronicamente por:", 2, 30);
-      ctx.fillText(`nome:${findUser.nome}`, 1, 60);
-      ctx.fillText(`email:${findUser.email}`, 1, 90);
-      ctx.fillText(`cpf:${cpfMask(findUser.cpf)}`, 1, 120);
+      ctx.font = "9pt Arial";
+
+      ctx.fillText(`Nome:${findUser.nome}`, 1, 30);
+      ctx.fillText(`Cpf:${cpfMask(findUser.cpf)}`, 1, 60);
+
+      ctx.fillText(`Email:${findUser.email}`, 1, 90);
+
       const carimbo = canvas.toDataURL("image/png");
-      srcToFile(carimbo, `${findUser.nome}.txt`, "image/png").then((file) => {
+      srcToFile(carimbo, `${findUser.nome}.png`, "image/png").then((file) => {
         const fd = new FormData();
         fd.append("userfile", file);
-        return api.post(`/uploadavatar/${findUser.id}`, fd, {
-          nome: "signature",
-          size: file.size,
-        });
+        return api
+          .post(`/uploadavatar/${findUser.id}`, fd, {
+            nome: "signature",
+            size: file.size,
+          })
+          .then((result) => {
+            window.location.reload(false);
+          });
       });
     };
 
@@ -2765,20 +3477,22 @@ function SignDocument() {
     }
   }
 
-  $("#certificate").change(function () {
-    if ($(this).is(":checked")) {
-      $(".eletronic-body").addClass("hidden");
-      $(".certificate-body").removeClass("hidden");
-      $(".container-eletronic2").addClass("hidden");
-      $(".container-eletronic").removeClass("hidden");
-    }
-  });
-  $("#eletronic").change(function () {
-    if ($(this).is(":checked")) {
-      $(".eletronic-body").removeClass("hidden");
-      $(".certificate-body").addClass("hidden");
-      $(".eletronic-body").removeClass("hidden");
-    }
+  $(document).ready(function () {
+    $("#certificate").click(function () {
+      if ($(this).is(":checked")) {
+        $(".eletronic-body").addClass("hidden");
+        $(".certificate-body").removeClass("hidden");
+        $(".container-eletronic2").addClass("hidden");
+        $(".container-eletronic").removeClass("hidden");
+      }
+    });
+    $("#eletronic").click(function () {
+      if ($(this).is(":checked")) {
+        $(".eletronic-body").removeClass("hidden");
+        $(".certificate-body").addClass("hidden");
+        $(".eletronic-body").removeClass("hidden");
+      }
+    });
   });
 
   function submitSMS() {
@@ -2786,16 +3500,18 @@ function SignDocument() {
     setLoading2(true);
 
     $(".container-eletronic").addClass("hidden");
-    api.get(`/eletronic/${findUser.email}`).then((result) => {
-      $(".alertSMS").removeClass("hidden");
-      setTimeout(() => {
-        $(".alertSMS").addClass("hidden");
-      }, 3000);
-      setCod(result.data.tokenSMS);
-      setLoading2(false);
-      $(".container-eletronic").addClass("hidden");
-      $(".container-eletronic2").removeClass("hidden");
-    });
+    api
+      .get(`/eletronic/${findUser.email}/${findUser.number}`)
+      .then((result) => {
+        $(".alertSMS").removeClass("hidden");
+        setTimeout(() => {
+          $(".alertSMS").addClass("hidden");
+        }, 3000);
+        setCod(result.data.tokenSMS);
+        setLoading2(false);
+        $(".container-eletronic").addClass("hidden");
+        $(".container-eletronic2").removeClass("hidden");
+      });
   }
 
   async function confirmSMS() {
@@ -2978,24 +3694,14 @@ function SignDocument() {
                   ) : (
                     <div>
                       <div className="container-eletronic">
-                        {avatar === null ? (
-                          <div>
-                            <img
-                              className="container-eletronicimg"
-                              src={Phone}
-                              alt=""
-                            />
-                          </div>
-                        ) : (
-                          <div>
-                            <p>carimbo da assinatura</p>
-                            <img
-                              className="img-signature"
-                              src={`${process.env.REACT_APP_BACKEND_URL}/files/${avatar.key}`}
-                              alt=""
-                            />
-                          </div>
-                        )}
+                        <div>
+                          <img
+                            className="container-eletronicimg"
+                            src={Phone}
+                            alt=""
+                          />
+                        </div>
+
                         <p>
                           Para continuar, clique no botão para solicitar o
                           código de verificação por SMS.
@@ -3071,18 +3777,18 @@ function SignDocument() {
                                   </div>
 
                                   <button
-                                    onClick={save}
-                                    type="button"
-                                    class="btn btn-primary"
-                                  >
-                                    Salvar
-                                  </button>
-                                  <button
                                     onClick={clear}
                                     type="button"
                                     class="btn btn-primary"
                                   >
                                     Limpar
+                                  </button>
+                                  <button
+                                    onClick={save}
+                                    type="button"
+                                    class="btn btn-primary"
+                                  >
+                                    Salvar
                                   </button>
                                   <button
                                     type="button"
@@ -3135,14 +3841,27 @@ function SignDocument() {
                           ENVIAR
                         </button>
                       </div>
-                      <div className="container-eletronic3 hidden ">
+                      <div className="container-eletronic3 ">
                         <p>
                           Informações da assinatura eletrônica{" "}
                           <i className="fas fa-signature" />
                         </p>
 
                         <div className="card-info-eletronic ">
-                          <img src={Person} alt="" />
+                          {avatar === null ? (
+                            <div>
+                              <img src={Person} alt="" />
+                            </div>
+                          ) : (
+                            <div>
+                              <p>carimbo da assinatura</p>
+                              <img
+                                className="img-signature"
+                                src={`${process.env.REACT_APP_BACKEND_URL}/files/${avatar.key}`}
+                                alt=""
+                              />
+                            </div>
+                          )}
                           <div className="row">
                             {" "}
                             <small>{findUser.nome}</small>
@@ -3159,14 +3878,26 @@ function SignDocument() {
                             <small>{phoneMask(findUser.number)}</small>
                           </div>
                         </div>
-
-                        <button
-                          className="btn btn-cyan mt-1"
-                          onClick={() => eletronicSignature()}
-                        >
-                          {" "}
-                          ASSINAR
-                        </button>
+                        {findPending.action === 0 ? (
+                          <div>
+                            {" "}
+                            <button
+                              onClick={() => eletronicSignature()}
+                              className="btn btn-cyan mt-1"
+                            >
+                              assinar{" "}
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <button
+                              onClick={() => startCades()}
+                              className="btn btn-cyan mt-1"
+                            >
+                              assinar{" "}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -3222,12 +3953,122 @@ function SignDocument() {
           )}
           {findOrder.type === "aprovador" ? (
             <div>
-              <button
-                onClick={() => startAprovador()}
-                className="btn btn-cyan mt-1"
-              >
-                aprovar{" "}
-              </button>
+              <div className="container-eletronic">
+                {avatar === null ? (
+                  <div></div>
+                ) : (
+                  <div>
+                    <p>carimbo da assinatura</p>
+                    <img
+                      className="img-signature"
+                      src={`${process.env.REACT_APP_BACKEND_URL}/files/${avatar.key}`}
+                      alt=""
+                    />
+                  </div>
+                )}
+
+                {avatar === null ? (
+                  <div>
+                    <div className="alert alert-danger" role="alert">
+                      {" "}
+                      A sua rubrica está pendente, adicione! será necessária
+                      para a aprovar o documento{" "}
+                      <p
+                        className="modal-signature"
+                        data-toggle="modal"
+                        data-target="#exampleModal3"
+                      >
+                        &nbsp; clique aqui!
+                      </p>
+                    </div>
+                    <div
+                      class="modal fade"
+                      id="exampleModal3"
+                      tabindex="-1"
+                      aria-labelledby="exampleModalLabel2"
+                      aria-hidden="true"
+                    >
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <p class="modal-title" id="exampleModalLabel2">
+                              insira sua rubrica <img src={Signature} alt="" />
+                            </p>
+                            <button
+                              type="button"
+                              class="close"
+                              data-dismiss="modal"
+                              aria-label="Close"
+                            >
+                              <span aria-hidden="true">&times;</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            <p>
+                              {" "}
+                              insira sua rubrica no campo abaixo ,ela será usada
+                              no carimbo da assinatura eletrônica
+                            </p>{" "}
+                            <SignatureCanvas
+                              ref={signCanvas}
+                              penColor="black"
+                              canvasProps={{
+                                width: 500,
+                                height: 200,
+                                className: "sigCanvas",
+                              }}
+                            />
+                            <canvas
+                              ref={canvasRef}
+                              width={250}
+                              height={175}
+                              className="canvas-signature hidden"
+                            >
+                              <img
+                                className="canvas-img"
+                                src={Image001}
+                                alt=""
+                              />
+                            </canvas>
+                          </div>
+
+                          <button
+                            onClick={clear}
+                            type="button"
+                            class="btn btn-primary"
+                          >
+                            Limpar
+                          </button>
+                          <button
+                            onClick={save}
+                            type="button"
+                            class="btn btn-primary"
+                          >
+                            Salvar
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-dismiss="modal"
+                          >
+                            Fechar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p>Para continuar clique no botão de aprovar</p>
+                    <button
+                      onClick={() => startAprovador()}
+                      className="btn btn-cyan mt-1"
+                    >
+                      aprovar{" "}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div></div>

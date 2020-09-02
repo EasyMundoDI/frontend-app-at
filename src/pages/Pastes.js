@@ -1,14 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-
+import world from "../images/world.png";
 import api from "../services/api";
 import { cnpjMask } from "../util/Mask";
 import axios from "axios";
 import Loading from "../components/Loading";
 import Folder from "../images/add.png";
 import Folder2 from "../images/folder.png";
-import Person from "../images/user.png";
-import Person2 from "../images/userorg.png";
-import world from "../images/world.png";
+
 import trash from "../images/trash.png";
 import searchimg from "../images/searchimg.png";
 import hashids from "hashids";
@@ -27,6 +25,8 @@ function Pastes() {
   const [display1, setDisplay1] = useState(false);
   const [search, setSearch] = useState("pessoal");
   const [searchValue, setSearchValue] = useState(0);
+
+  console.log(searchValue);
 
   useEffect(() => {
     axios.all([api.get(`/user/userpaste`), api.get(`/user/organization`)]).then(

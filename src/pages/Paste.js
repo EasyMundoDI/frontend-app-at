@@ -195,46 +195,15 @@ function Pastes() {
     }
   }
 
-  $(".inputsigned").click(function () {
-    var selectedSigned = new Array();
-    var n = $(".inputsigned:checked").val();
-
-    if (n > 0) {
-      $(".inputsigned:checked").each(function () {
-        selectedSigned.push({
-          id: $(this).val(),
-          name: $(this).data("name"),
-          description: $(this).data("description"),
-        });
-      });
-    }
-    setCheckValue(selectedSigned);
-  });
-
-  $(".inputpending").click(function () {
-    var selectedSigned = new Array();
-    var n = $(".inputpending:checked").val();
-
-    if (n > 0) {
-      $(".inputpending:checked").each(function () {
-        selectedSigned.push({
-          id: $(this).val(),
-          name: $(this).data("name"),
-          description: $(this).data("description"),
-        });
-      });
-    }
-    setCheckValue2(selectedSigned);
-  });
-
   function movePending() {
     if ($("#select-custom option:selected").text() === "pessoal") {
       var count = 0;
       checkvalue2.forEach((element, i, array) => {
         count++;
         api.get(`/user/paste/${hash.encode(element.id)}`).then((result) => {
-          if (result.data.length < 1) {
+          if (result.data === null) {
             api
+
               .post(`/user/pendingPaste/${element.id}`, {
                 paste: $("#select-customoption option:selected").val(),
               })
@@ -277,6 +246,9 @@ function Pastes() {
                   ).val()}`
                 );
               }
+              if (count === array.length) {
+                window.location.reload(false);
+              }
             });
         } else {
           api
@@ -316,16 +288,12 @@ function Pastes() {
       checkvalue2.forEach((element, i, array) => {
         count++;
         api.get(`/user/paste/${hash.encode(element.id)}`).then((result) => {
-          if (result.data.length < 1) {
+          if (result.data === null) {
             api
               .post(`/user/pendingPaste/${element.id}`, {
                 paste: $("#select-customoption option:selected").val(),
               })
               .then((result) => {});
-
-            if (count === array.length) {
-              window.location.reload(false);
-            }
           } else {
             api
               .put(
@@ -334,13 +302,12 @@ function Pastes() {
                 ).val()}`
               )
               .then((result) => {});
-
-            if (count === array.length) {
-              window.location.reload(false);
-            }
           }
         });
       });
+      if (count === array.length) {
+        window.location.reload(false);
+      }
     } else {
       var count = 0;
       checkvalue2.forEach((element, i, array) => {
@@ -746,7 +713,9 @@ function Pastes() {
                         >
                           <option value={0}>sem pasta</option>
                           {orgsPaste.map((iten, i) => (
-                            <option value={iten.id}>{iten.nome}</option>
+                            <option key={i} value={iten.id}>
+                              {iten.nome}
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -1131,7 +1100,24 @@ function Pastes() {
                           value={iten.id}
                           data-name={iten.nome}
                           data-description={iten.description}
-                          onChange={function () {
+                          onClick={function () {
+                            $(".inputsigned").each(function () {
+                              this.checked = false;
+                            });
+                            setDisplay2(false);
+                            var selectedSigned = new Array();
+                            var n = $(".inputpending:checked").val();
+
+                            if (n > 0) {
+                              $(".inputpending:checked").each(function () {
+                                selectedSigned.push({
+                                  id: $(this).val(),
+                                  name: $(this).data("name"),
+                                  description: $(this).data("description"),
+                                });
+                              });
+                            }
+                            setCheckValue2(selectedSigned);
                             const a = document.querySelectorAll(
                               "input:checked"
                             );
@@ -1287,7 +1273,25 @@ function Pastes() {
                           value={iten.id}
                           data-name={iten.nome}
                           data-description={iten.description}
-                          onChange={function () {
+                          onClick={function () {
+                            $(".inputpending").each(function () {
+                              this.checked = false;
+                            });
+                            setDisplay(false);
+
+                            var selectedSigned = new Array();
+                            var n = $(".inputsigned:checked").val();
+
+                            if (n > 0) {
+                              $(".inputsigned:checked").each(function () {
+                                selectedSigned.push({
+                                  id: $(this).val(),
+                                  name: $(this).data("name"),
+                                  description: $(this).data("description"),
+                                });
+                              });
+                            }
+                            setCheckValue(selectedSigned);
                             const c = document.querySelectorAll(
                               "input:checked"
                             );

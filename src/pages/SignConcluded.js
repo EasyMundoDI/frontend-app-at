@@ -41,19 +41,19 @@ function SignConcluded() {
           api
             .get(`/user/pending/${id}/${currentUser.data.cpf}`)
             .then((userOrder) => {
-              setUserOrder(userOrder.data[0]);
+              api.get(`/user/file/${signed.data.file}`).then((fileDocument) => {
+                setUserOrder(userOrder.data[0]);
+                setFileDocument(fileDocument.data);
+                setSigned(signed.data);
+                setPasteDocument(pasteDocument.data);
+                setOrganizationDocument(organizationDocument.data);
+                setCurrentUser(currentUser.data);
+                setCurrentOrder(currentOrder.data);
+                setTimeout(() => {
+                  setLoading(false);
+                }, 3000);
+              });
             });
-          api.get(`/user/file/${signed.data.file}`).then((fileDocument) => {
-            setFileDocument(fileDocument.data);
-          });
-          setSigned(signed.data);
-          setPasteDocument(pasteDocument.data);
-          setOrganizationDocument(organizationDocument.data);
-          setCurrentUser(currentUser.data);
-          setCurrentOrder(currentOrder.data);
-          setTimeout(() => {
-            setLoading(false);
-          }, 3000);
         }
       )
     );

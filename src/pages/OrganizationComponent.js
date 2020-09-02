@@ -5,6 +5,7 @@ import Loading from "../components/Loading";
 import axios from "axios";
 import hashids from "hashids";
 import move from "../images/move.png";
+import warning from "../images/warning.png";
 import moment from "moment";
 import $ from "jquery";
 import back from "../images/back.png";
@@ -109,6 +110,20 @@ function OrganizationComponent() {
         });
     });
   }
+  function moveDocumentsSigned() {
+    const a = document.querySelectorAll("input.inputsigned:checked");
+    var count = 0;
+    a.forEach((element, index, array) => {
+      count++;
+      api
+        .post(`/user/remove/${element.value}/signed/${newid}`)
+        .then((result) => {
+          if (count === array.length) {
+            window.location.reload(false);
+          }
+        });
+    });
+  }
   function myFunction() {
     // Declare variables
     var input, filter, ul, li, a, i, txtValue;
@@ -149,37 +164,6 @@ function OrganizationComponent() {
     }
   }
 
-  $(".inputsigned").click(function () {
-    var selectedSigned = new Array();
-    var n = $(".inputsigned:checked").val();
-
-    if (n > 0) {
-      $(".inputsigned:checked").each(function () {
-        selectedSigned.push({
-          id: $(this).val(),
-          name: $(this).data("name"),
-          description: $(this).data("description"),
-        });
-      });
-    }
-    setCheckValue(selectedSigned);
-  });
-  $(".inputpending").click(function () {
-    var selectedSigned = new Array();
-    var n = $(".inputpending:checked").val();
-
-    if (n > 0) {
-      $(".inputpending:checked").each(function () {
-        selectedSigned.push({
-          id: $(this).val(),
-          name: $(this).data("name"),
-          description: $(this).data("description"),
-        });
-      });
-    }
-    setCheckValue2(selectedSigned);
-  });
-
   function movePending() {
     if ($("#select-custom option:selected").text() === "pessoal") {
       var count = 0;
@@ -193,9 +177,11 @@ function OrganizationComponent() {
               })
               .then((result) => {});
 
-            if (count === array.length) {
-              window.location.reload(false);
-            }
+            setTimeout(() => {
+              if (count === array.length) {
+                window.location.reload(false);
+              }
+            }, 2000);
           } else {
             api
               .put(
@@ -233,6 +219,11 @@ function OrganizationComponent() {
                 );
               }
             });
+          setTimeout(() => {
+            if (count === array.length) {
+              window.location.reload(false);
+            }
+          }, 2000);
         } else {
           api
             .get(
@@ -324,6 +315,11 @@ function OrganizationComponent() {
                 );
               }
             });
+          setTimeout(() => {
+            if (count === array.length) {
+              window.location.reload(false);
+            }
+          }, 2000);
         } else {
           api
             .get(
@@ -349,6 +345,11 @@ function OrganizationComponent() {
                 );
               }
             });
+          setTimeout(() => {
+            if (count === array.length) {
+              window.location.reload(false);
+            }
+          }, 2000);
         }
       });
     }
@@ -362,6 +363,121 @@ function OrganizationComponent() {
     </div>
   ) : (
     <div className="main-container">
+      <div
+        class="modal fade"
+        id="exampleModalsigned"
+        tabindex="-1"
+        role="dialog"
+        aria-labelledby="exampleModalLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLabel">
+                <img src={warning} alt="" /> excluir documentos
+              </h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+
+            <div class="modal-body">
+              <ul className="list-group list-group-flush">
+                {checkvalue.map((iten, i) => (
+                  <li className="list-group-item-success" key={i}>
+                    <div className="container">
+                      <div className="row">
+                        <div className="col ">
+                          <p>{iten.name}</p>
+                        </div>
+                        <div className="col ">
+                          <p>{iten.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-danger"
+                onClick={() => deleteDocumentsSigned()}
+              >
+                excluir documentos concluídos
+              </button>
+              <button
+                type="button"
+                class="btn btn-danger"
+                onClick={() => moveDocumentsSigned()}
+              >
+                excluir relacionamentos da pasta com os documentos concluídos
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="modal fade"
+        id="exampleModalpending"
+        tabIndex="-1"
+        role="dialog"
+        aria-labelledby="exampleModalLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLabel">
+                <img src={warning} alt="" /> excluir documentos
+              </h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+
+            <div class="modal-body">
+              <ul className="list-group list-group-flush" id="myUL2">
+                {checkvalue2.map((iten, i) => (
+                  <li className="list-group-item-success" key={i}>
+                    <div className="container">
+                      <div className="row">
+                        <div className="col ">
+                          <p>{iten.name}</p>
+                        </div>
+                        <div className="col ">
+                          <p>{iten.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-danger"
+                onClick={() => deleteDocuments()}
+              >
+                excluir documentos pendentes
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div
         class="modal fade"
         id="exampleModal"
@@ -677,7 +793,8 @@ function OrganizationComponent() {
                   alt=""
                   id="img-delete"
                   className="img-fluid img-backbutton"
-                  onClick={() => deleteDocuments()}
+                  data-toggle="modal"
+                  data-target="#exampleModalpending"
                 />{" "}
                 <img
                   src={move}
@@ -695,7 +812,8 @@ function OrganizationComponent() {
                   src={trash}
                   alt=""
                   className="img-fluid img-backbutton"
-                  onClick={() => deleteDocumentsSigned()}
+                  data-toggle="modal"
+                  data-target="#exampleModalsigned"
                 />
                 <img
                   src={move}
@@ -802,6 +920,23 @@ function OrganizationComponent() {
                           data-name={iten.nome}
                           data-description={iten.description}
                           onChange={function () {
+                            $(".inputsigned").each(function () {
+                              this.checked = false;
+                            });
+                            setDisplay2(false);
+                            var selectedSigned = new Array();
+                            var n = $(".inputpending:checked").val();
+
+                            if (n > 0) {
+                              $(".inputpending:checked").each(function () {
+                                selectedSigned.push({
+                                  id: $(this).val(),
+                                  name: $(this).data("name"),
+                                  description: $(this).data("description"),
+                                });
+                              });
+                            }
+                            setCheckValue2(selectedSigned);
                             const a = document.querySelectorAll(
                               "input:checked"
                             );
@@ -885,13 +1020,30 @@ function OrganizationComponent() {
                       <div className="col ">
                         <input
                           type="checkbox"
-                          id={iten.id}
+                          id={iten.uniqueCod}
                           name="type"
                           className="inputsigned"
                           value={iten.id}
                           data-name={iten.nome}
                           data-description={iten.description}
                           onChange={function () {
+                            $(".inputpending").each(function () {
+                              this.checked = false;
+                            });
+                            setDisplay(false);
+                            var selectedSigned = new Array();
+                            var n = $(".inputsigned:checked").val();
+
+                            if (n > 0) {
+                              $(".inputsigned:checked").each(function () {
+                                selectedSigned.push({
+                                  id: $(this).val(),
+                                  name: $(this).data("name"),
+                                  description: $(this).data("description"),
+                                });
+                              });
+                            }
+                            setCheckValue(selectedSigned);
                             const c = document.querySelectorAll(
                               "input:checked"
                             );
@@ -904,7 +1056,7 @@ function OrganizationComponent() {
                           }}
                         />{" "}
                         <label
-                          htmlFor={iten.id}
+                          htmlFor={iten.uniqueCod}
                           className="list-nome-types"
                         ></label>
                         <a

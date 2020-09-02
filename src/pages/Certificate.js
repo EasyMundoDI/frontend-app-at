@@ -22,7 +22,6 @@ function Certificate() {
     }
     loadCertificate();
   }, [setLoading]);
-  console.log(userCerts);
 
   function deleteCert(id) {
     setLoading(true);

@@ -9,6 +9,7 @@ import { Form } from "@unform/web";
 import logo from "../images/Mundo_Digital_Logo_Fundo_Transparente.png";
 import api from "../services/api-no-authenticate";
 import * as Yup from "yup";
+import $ from "jquery";
 
 function Login() {
   const { setAuthenticate } = useContext(Context);
@@ -105,7 +106,11 @@ function Login() {
           number: data.numero.replace(/\D/g, ""),
         })
         .then((result) => {
-          history.push("/signin");
+          $(".confirmAccount2").removeClass("hidden");
+          setTimeout(() => {
+            $(".confirmAccount2").addClass("hidden");
+            window.location.reload(false);
+          }, 5000);
         })
         .catch((fail) => {
           document.getElementById("errorRegister").style.display = "block";
@@ -144,10 +149,50 @@ function Login() {
 
   return (
     <div className="main-container">
+      <div
+        class="modal fade"
+        id="exampleModal"
+        tabindex="-1"
+        role="dialog"
+        aria-labelledby="exampleModalLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLabel">
+                Modal title
+              </h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">...</div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-dismiss="modal"
+              >
+                Close
+              </button>
+              <button type="button" class="btn btn-primary">
+                Save changes
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="login-wrap">
         <p className="confirmAccount" id="confirmAccount">
           confirme seu email
         </p>
+
         <div className="login-html">
           <input
             id="tab-1"
@@ -168,6 +213,18 @@ function Login() {
               <p className="errorAccount" id="errorAccount">
                 credenciais incorretas
               </p>
+
+              <div className="group">
+                <button
+                  className="btn btn-primary button button-certificate"
+                  onClick={() => gotoCertificate()}
+                  id="certificateLabel"
+                >
+                  login com certificado
+                </button>
+              </div>
+              <div className="hr"></div>
+
               <Form onSubmit={onSubmit} ref={formRef}>
                 <div className="group">
                   <label htmlFor="user" className="label">
@@ -206,15 +263,9 @@ function Login() {
               </Form>
               <div className="hr"></div>
               <div className="foot-lnk">
-                <a href="#forgot">Esqueceu a senha ?</a>
-              </div>
-              <div className="group">
-                <button
-                  className="btn btn-primary button"
-                  onClick={() => gotoCertificate()}
-                >
-                  login com certificado
-                </button>
+                <a data-toggle="modal" data-target="#exampleModal">
+                  Esqueceu a senha ?
+                </a>
               </div>
             </div>
 
@@ -224,6 +275,7 @@ function Login() {
                   o usuário já existe, se você já é cadastrado faça o login com
                   o certificado
                 </p>
+
                 <div className="group">
                   <label htmlFor="nome" className="label">
                     nome
@@ -240,6 +292,12 @@ function Login() {
                     type="text"
                     className="input"
                   />
+                  <div
+                    class="alert alert-success confirmAccount2 hidden"
+                    role="alert"
+                  >
+                    Conta criada com sucesso ! você está sendo redirecionado ...
+                  </div>
                 </div>
                 <div className="group">
                   <label htmlFor="cpf" className="label">

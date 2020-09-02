@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import api from "../services/api";
-import { cpfMask } from "../util/Mask";
+import { cpfMask, phoneMask } from "../util/Mask";
 import BlockUi from "react-block-ui";
 import "react-block-ui/style.css";
 import Input from "../components/MyInputs";
@@ -9,6 +9,7 @@ import { Form } from "@unform/web";
 import tap from "../images/touch.png";
 import DragNDrop from "../util/DragNDrop";
 import $ from "jquery";
+import Person from "../images/user.png";
 import "react-dropzone-uploader/dist/styles.css";
 import "../styles/styles.css";
 import Dropzone from "react-dropzone-uploader";
@@ -26,10 +27,12 @@ function Document() {
   /* block user interface*/
 
   /*queries useEffect*/
+  const [avatar, setAvatar] = useState(null);
   const [userOrganization, setUserOrganization] = useState([]);
   const [pastes, setPastes] = useState([]);
-  const [user, setUser] = useState();
+  const [user, setUser] = useState([]);
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   /*queries useEffect*/
 
   /* execute actions*/
@@ -57,20 +60,22 @@ function Document() {
       api.get(`/user/searchusers`),
       api.get(`/user/organization`),
       api.get(`/user/userpaste`),
-    ])
-      .then(
-        Axios.spread((user, users, infoOrg, infoPaste) => {
+    ]).then(
+      Axios.spread((user, users, infoOrg, infoPaste) => {
+        api.get(`/uploadavatar/${user.data.id}`).then((resultAvatar) => {
+          setAvatar(resultAvatar.data);
           setUser(user.data);
           setUsers(users.data);
           setUserOrganization(infoOrg.data);
           setPastes(infoPaste.data);
-        })
-      )
-      .then(setBlock(false));
-  }, [signed]);
+          setLoading(false);
+          setBlock(false);
+        });
+      })
+    );
+  }, []);
 
   /*global  */
-  window.addEventListener("load", DragNDrop);
 
   /*global*/
 
@@ -183,8 +188,8 @@ function Document() {
       })
       .then((result) => {
         setFile(result.data.result[0]);
-        document.getElementById("enviar").disabled = true;
-        document.getElementById("adicionar").disabled = false;
+        document.getElementById("enviar").disabled = false;
+
         setDisplayButton(true);
       });
   };
@@ -507,7 +512,6 @@ function Document() {
   $(function () {
     $(".img-dropzone").click(function () {
       $(this).closest(".cards-dropzone").remove();
-
       return false;
     });
   });
@@ -535,7 +539,9 @@ function Document() {
     }
   });
 
-  return block === true ? (
+  return loading === true ? (
+    <div>loading</div>
+  ) : block === true ? (
     <div>
       <BlockUi tag="div" blocking={block}></BlockUi>
     </div>
@@ -550,7 +556,12 @@ function Document() {
         onSubmit={onSubmitFiles}
         getUploadParams={() => ({ url: "https://httpbin.org/post" })}
         onChangeStatus={handleChangeStatus}
-        styles={{ dropzone: { minHeight: 200, maxHeight: 250 } }}
+        styles={{
+          dropzone: {
+            minHeight: 200,
+            maxHeight: 250,
+          },
+        }}
         submitButtonDisabled={displayButton}
       />
       <div className="container-description form__group field">
@@ -590,58 +601,9 @@ function Document() {
           cadastrados no sistema não poderá fazer assinatura eletrônica
         </div>
         <div className="container-participante col-lg-5">
-          <h5>Participantes</h5>
-          <p>Escolha os usuários que devem tomar ações no documento:</p>
+          <h5>Participante, assinatura rápida</h5>
+
           <div id="signatario" className="">
-            <div className="types">
-              <li>
-                {" "}
-                <input
-                  type="radio"
-                  id="checkboxTypeSignatario"
-                  name="type"
-                  defaultChecked
-                  value={"signatario"}
-                />{" "}
-                <label
-                  htmlFor="checkboxTypeSignatario"
-                  className="list-nome-types"
-                >
-                  <i className="fas fa-pencil-alt" />
-                  signatário
-                </label>
-              </li>
-              <li>
-                <input
-                  type="radio"
-                  id="checkboxTypeAprovador"
-                  name="type"
-                  value={"aprovador"}
-                />{" "}
-                <label
-                  htmlFor="checkboxTypeAprovador"
-                  className="list-nome-types"
-                >
-                  <i className="fas fa-clipboard-check" />
-                  aprovador
-                </label>{" "}
-              </li>
-              <li>
-                <input
-                  type="radio"
-                  name="type"
-                  id="checkboxTypeObservador"
-                  value={"observador"}
-                />{" "}
-                <label
-                  htmlFor="checkboxTypeObservador"
-                  className="list-nome-types"
-                >
-                  <i className="fas fa-eye" />
-                  observador
-                </label>{" "}
-              </li>
-            </div>
             <div className="eletronic-signature">
               <li>
                 {" "}
@@ -660,8 +622,38 @@ function Document() {
                 </label>
               </li>
             </div>
+            <div className="container-eletronic3 att">
+              <div className="card-info-eletronic  ">
+                {avatar === null ? (
+                  <div></div>
+                ) : (
+                  <div>
+                    <img
+                      className="img-signature"
+                      src={`${process.env.REACT_APP_BACKEND_URL}/files/${avatar.key}`}
+                      alt=""
+                    />
+                  </div>
+                )}
+                <div className="row">
+                  {" "}
+                  <small>{user.nome}</small>
+                </div>
+                <div className="row">
+                  <small>{user.email}</small>
+                </div>
+                <div className="row">
+                  {" "}
+                  <small>{cpfMask(user.cpf)}</small>
+                </div>
+                <div className="row">
+                  {" "}
+                  <small>{phoneMask(user.number)}</small>
+                </div>
+              </div>
+            </div>
 
-            <Form onSubmit={onSubmitDocument} ref={formRef}>
+            <Form onSubmit={onSubmitDocument} ref={formRef} className="hidden">
               <Input
                 value={search}
                 name="nome"
@@ -753,14 +745,6 @@ function Document() {
                     ))}
                 </div>
               )}
-
-              <button
-                type="submit"
-                className="btn btn-cyan mt-1"
-                id="adicionar"
-              >
-                adicionar
-              </button>
             </Form>
           </div>
         </div>
@@ -774,48 +758,48 @@ function Document() {
           </div>
           <div className="container-board">
             <h5>
-              <img src={tap} alt="" /> clique e arraste para mudar a posição das
-              ordens
+              <i class="fas fa-star"></i>
+              Use a assinatura rápida para assinar com facilidade documentos que
+              só precisam da sua assinatura.
+            </h5>
+            <h5>
+              Precisa incluir mais signatários?{" "}
+              <a href="/dashboard/document">clique aqui</a>
             </h5>
 
-            <div className="container-dropzone" id="main">
+            <div className="container-dropzone hidden" id="main">
               {signed.map((element, i) => (
-                <div>
-                  <div
-                    key={i}
-                    className="cards-dropzone"
-                    draggable="true"
-                    id="cards-dropzone"
-                  >
-                    <div className="status"></div>
-                    <div className="content-type">
-                      <img src={trash} alt="" className="img-dropzone" />
-                      <small>{element.type}</small>
-                    </div>
+                <div
+                  key={i}
+                  className="cards-dropzone"
+                  draggable="true"
+                  id="cards-dropzone"
+                >
+                  <div className="status"></div>
+                  <div className="content-type">
+                    <img src={trash} alt="" className="img-dropzone" />
+                    <small>{element.type}</small>
+                  </div>
 
-                    <div className="content">
-                      <h5>{element.nome}</h5>
-                    </div>
+                  <div className="content">
+                    <h5>{element.nome}</h5>
+                  </div>
 
-                    <div className="content-email">
-                      <p>{element.email}</p>
-                    </div>
-                    <div className="content-cpf">
-                      <p>{element.cpf}</p>
-                    </div>
-                    <div className="content-eletronic">
-                      <p>{element.eletronic}</p>
-                    </div>
-                    <div className="content-signature">
-                      {element.signature === "strangeUser" ? (
-                        <p>usuário não registrado</p>
-                      ) : (
-                        <p></p>
-                      )}
-                    </div>
-                    <div className="arrow-down-order hidden">
-                      <i class="fas fa-arrow-alt-circle-down"></i>
-                    </div>
+                  <div className="content-email">
+                    <p>{element.email}</p>
+                  </div>
+                  <div className="content-cpf">
+                    <p>{element.cpf}</p>
+                  </div>
+                  <div className="content-eletronic">
+                    <p>{element.eletronic}</p>
+                  </div>
+                  <div className="content-signature">
+                    {element.signature === "strangeUser" ? (
+                      <p>usuário não registrado</p>
+                    ) : (
+                      <p></p>
+                    )}
                   </div>
                 </div>
               ))}

@@ -15,13 +15,16 @@ import SignConcluded from "../src/pages/SignConcluded";
 import SignInCertificate from "../src/pages/SignInCertificate";
 import SignDocument from "../src/pages/SignDocument";
 import Organization from "../src/pages/Organization";
+import FastSignature from "../src/pages/FastSignature";
 import Paste from "../src/pages/Paste";
 import PasteOrganization from "../src/pages/PasteOrganization";
+import Perfil from "../src/pages/Perfil";
 import DocumentsViewer from "../src/pages/DocumentViewer";
 import DocumentsStrange from "../src/pages/DocumentStrange";
 import DocumentsStrangeSign from "../src/pages/DocumentStrangeSign";
 import DocumentsStrangeConclude from "../src/pages/DocumentStrangeConclude";
 import OrganizationComponent from "../src/pages/OrganizationComponent";
+import ForgetPassword from "../src/pages/ForgetPassword";
 
 const PagesRoot = () => (
   <Router forceRefresh={true}>
@@ -31,6 +34,7 @@ const PagesRoot = () => (
         <Route exact path="/signIn" component={SignIn} />
         <Route exact path="/signincert" component={SignInCertificate} />
         <Route exact path="/register" component={Register} />
+        <Route exact path="/forgot" component={ForgetPassword} />
         <Route
           exact
           path="/emailverification/:token"
@@ -57,6 +61,8 @@ const PagesRoot = () => (
           path="/dashboard/certificate"
           component={Certificate}
         />
+
+        <RoutesPrivate exact path="/dashboard/Profile" component={Perfil} />
         <RoutesPrivate exact path="/dashboard/document" component={Document} />
         <RoutesPrivate
           exact
@@ -77,6 +83,11 @@ const PagesRoot = () => (
           exact
           path="/dashboard/documentsViewer"
           component={DocumentsViewer}
+        />
+        <RoutesPrivate
+          exact
+          path="/dashboard/fastSignature"
+          component={FastSignature}
         />
         <RoutesPrivate exact path="/dashboard/pastas" component={Pastes} />
         <RoutesPrivate exact path="/dashboard/pastas/:id" component={Paste} />

@@ -8,17 +8,18 @@ import move from "../images/move.png";
 import moment from "moment";
 import $ from "jquery";
 import back from "../images/back.png";
-import searchimg from "../images/search.png";
+import Refresh from "../images/refresh.png";
 import searchconclude from "../images/searchimg.png";
 import Tick from "../images/tick.png";
-import organizationimage from "../images/organization.png";
+
 import Filepdf from "../images/pdf.png";
 import Filegeneric from "../images/filegeneric.png";
-import Adduser from "../images/adduser.png";
+
 import trash from "../images/trash.png";
-import world from "../images/world.png";
+
 import Caution from "../images/caution.png";
 const hash = new hashids("", 35);
+
 function DocumentViewer() {
   const [pending, setPending] = useState([]);
   const [infoUser, setInfoUser] = useState();
@@ -38,6 +39,7 @@ function DocumentViewer() {
   const [organization, setOrganization] = useState([]);
   const currentRef = useRef();
   const currentRef2 = useRef();
+
   useEffect(() => {
     axios
       .all([
@@ -137,44 +139,14 @@ function DocumentViewer() {
     }
   }
 
-  $(".inputsigned").click(function () {
-    var selectedSigned = new Array();
-    var n = $(".inputsigned:checked").val();
-
-    if (n > 0) {
-      $(".inputsigned:checked").each(function () {
-        selectedSigned.push({
-          id: $(this).val(),
-          name: $(this).data("name"),
-          description: $(this).data("description"),
-        });
-      });
-    }
-    setCheckValue(selectedSigned);
-  });
-  $(".inputpending").click(function () {
-    var selectedSigned = new Array();
-    var n = $(".inputpending:checked").val();
-
-    if (n > 0) {
-      $(".inputpending:checked").each(function () {
-        selectedSigned.push({
-          id: $(this).val(),
-          name: $(this).data("name"),
-          description: $(this).data("description"),
-        });
-      });
-    }
-    setCheckValue2(selectedSigned);
-  });
-
   function movePending() {
     if ($("#select-custom option:selected").text() === "pessoal") {
       var count = 0;
       checkvalue2.forEach((element, i, array) => {
         count++;
+
         api.get(`/user/paste/${hash.encode(element.id)}`).then((result) => {
-          if (result.data.length < 1) {
+          if (result.data === null) {
             api
               .post(`/user/pendingPaste/${element.id}`, {
                 paste: $("#select-customoption option:selected").val(),
@@ -263,18 +235,16 @@ function DocumentViewer() {
         api
           .get(`/user/paste/signed/${hash.encode(element.id)}`)
           .then((result) => {
-            if (result.data.length < 1) {
+            if (result.data === null) {
               api
                 .post(`/user/signedPaste/${element.id}`, {
                   paste: $("#select-customoption2 option:selected").val(),
                 })
                 .then((result) => {});
 
-              setTimeout(() => {
-                if (count === array.length) {
-                  window.location.reload(false);
-                }
-              }, 2000);
+              if (count === array.length) {
+                window.location.reload(false);
+              }
             } else {
               api
                 .put(
@@ -283,11 +253,10 @@ function DocumentViewer() {
                   ).val()}`
                 )
                 .then((result) => {});
-              setTimeout(() => {
-                if (count === array.length) {
-                  window.location.reload(false);
-                }
-              }, 2000);
+
+              if (count === array.length) {
+                window.location.reload(false);
+              }
             }
           });
       });
@@ -310,6 +279,9 @@ function DocumentViewer() {
                     "#select-custom2 option:selected"
                   ).val()}`
                 );
+              }
+              if (count === array.length) {
+                window.location.reload(false);
               }
             });
         } else {
@@ -338,6 +310,9 @@ function DocumentViewer() {
               }
             });
         }
+        if (count === array.length) {
+          window.location.reload(false);
+        }
       });
     }
   }
@@ -364,6 +339,7 @@ function DocumentViewer() {
               <h5 class="modal-title" id="exampleModalLabel">
                 <img src={warning} alt="" /> excluir documentos
               </h5>
+
               <button
                 type="button"
                 class="close"
@@ -375,7 +351,7 @@ function DocumentViewer() {
             </div>
 
             <div class="modal-body">
-              <ul className="list-group list-group-flush" id="myUL2">
+              <ul className="list-group list-group-flush">
                 {checkvalue2.map((iten, i) => (
                   <li className="list-group-item-success" key={i}>
                     <div className="container">
@@ -429,7 +405,7 @@ function DocumentViewer() {
             </div>
 
             <div class="modal-body">
-              <ul className="list-group list-group-flush" id="myUL2">
+              <ul className="list-group list-group-flush">
                 {checkvalue.map((iten, i) => (
                   <li className="list-group-item-success" key={i}>
                     <div className="container">
@@ -483,6 +459,14 @@ function DocumentViewer() {
               </button>
             </div>
             <div class="modal-body">
+              <div
+                class="alert alert-danger alert-move hidden"
+                role="alert"
+                id="alert-pastas"
+              >
+                nenhuma pasta encontrada, adicione uma pasta para mover os
+                documentos
+              </div>
               <div className="modal-select">
                 <i className="far fa-building"></i> <small>organização</small>
                 <select
@@ -571,7 +555,7 @@ function DocumentViewer() {
               >
                 mover
               </button>
-              <ul className="list-group list-group-flush" id="myUL2">
+              <ul className="list-group list-group-flush">
                 {checkvalue2.map((iten, i) => (
                   <li className="list-group-item-success" key={i}>
                     <div className="container">
@@ -619,6 +603,10 @@ function DocumentViewer() {
             <div class="modal-body">
               <div className="modal-select">
                 <small>organização</small>
+                <div class="alert alert-danger alert-move hidden" role="alert">
+                  nenhuma pasta encontrada, adicione uma pasta para mover os
+                  documentos
+                </div>
                 <select
                   className="nav-link custom-select select-custom"
                   id="select-custom2"
@@ -709,7 +697,7 @@ function DocumentViewer() {
               >
                 mover
               </button>
-              <ul className="list-group list-group-flush" id="myUL2">
+              <ul className="list-group list-group-flush">
                 {checkvalue.map((iten, i) => (
                   <li className="list-group-item-success" key={i}>
                     <div className="container">
@@ -742,6 +730,18 @@ function DocumentViewer() {
                 src={back}
                 alt=""
                 onClick={() => backbutton()}
+              />{" "}
+            </p>
+            <p>
+              {" "}
+              <img
+                className="img-fluid img-backbutton"
+                title="atualizar"
+                src={Refresh}
+                alt=""
+                onClick={function () {
+                  window.location.reload(false);
+                }}
               />{" "}
             </p>
             {display && (
@@ -879,6 +879,23 @@ function DocumentViewer() {
                           data-name={iten.nome}
                           data-description={iten.description}
                           onChange={function () {
+                            $(".inputsigned").each(function () {
+                              this.checked = false;
+                            });
+                            setDisplay2(false);
+                            var selectedSigned = new Array();
+                            var n = $(".inputpending:checked").val();
+
+                            if (n > 0) {
+                              $(".inputpending:checked").each(function () {
+                                selectedSigned.push({
+                                  id: $(this).val(),
+                                  name: $(this).data("name"),
+                                  description: $(this).data("description"),
+                                });
+                              });
+                            }
+                            setCheckValue2(selectedSigned);
                             const a = document.querySelectorAll(
                               "input:checked"
                             );
@@ -1007,13 +1024,31 @@ function DocumentViewer() {
                       <div className="col ">
                         <input
                           type="checkbox"
-                          id={iten.id}
+                          id={iten.uniqueCod}
                           name="type"
                           className="inputsigned"
                           value={iten.id}
                           data-name={iten.nome}
                           data-description={iten.description}
                           onChange={function () {
+                            $(".inputpending").each(function () {
+                              this.checked = false;
+                            });
+                            setDisplay(false);
+
+                            var selectedSigned = new Array();
+                            var n = $(".inputsigned:checked").val();
+
+                            if (n > 0) {
+                              $(".inputsigned:checked").each(function () {
+                                selectedSigned.push({
+                                  id: $(this).val(),
+                                  name: $(this).data("name"),
+                                  description: $(this).data("description"),
+                                });
+                              });
+                            }
+                            setCheckValue(selectedSigned);
                             const c = document.querySelectorAll(
                               "input:checked"
                             );
@@ -1026,7 +1061,7 @@ function DocumentViewer() {
                           }}
                         />{" "}
                         <label
-                          htmlFor={iten.id}
+                          htmlFor={iten.uniqueCod}
                           className="list-nome-types"
                         ></label>
                         <a
