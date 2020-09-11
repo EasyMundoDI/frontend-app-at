@@ -10,6 +10,7 @@ import logo from "../images/Mundo_Digital_Logo_Fundo_Transparente.png";
 import api from "../services/api-no-authenticate";
 import * as Yup from "yup";
 import $ from "jquery";
+import Warning from "../images/warning.png";
 
 function Login() {
   const { setAuthenticate } = useContext(Context);
@@ -18,6 +19,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const formRef = useRef(null);
   const formRef2 = useRef(null);
+  const formRef3 = useRef(null);
   const history = useHistory();
 
   useEffect(() => {
@@ -146,6 +148,29 @@ function Login() {
       document.getElementById("register").disabled = false;
     }
   }
+  async function onSubmit3(data, { reset }) {
+    try {
+      const Schema = Yup.object().shape({
+        email: Yup.string()
+          .email("Digite um e-mail válido")
+          .required("O e-mail é obrigatório"),
+        cpf: Yup.string().required("O cpf é obrigatório"),
+      });
+      console.log(Schema);
+      await Schema.validate(data, {
+        abortEarly: false,
+      });
+      reset();
+    } catch (error) {
+      if (error instanceof Yup.ValidationError) {
+        const errorMessages = {};
+        error.inner.forEach((err) => {
+          errorMessages[err.path] = error.message;
+        });
+        console.log(errorMessages);
+      }
+    }
+  }
 
   return (
     <div className="main-container">
@@ -157,34 +182,74 @@ function Login() {
         aria-labelledby="exampleModalLabel"
         aria-hidden="true"
       >
-        <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="exampleModalLabel">
-                Modal title
-              </h5>
+        <div className="modal-dialog" role="document">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h7 className="modal-title" id="exampleModalLabel">
+                Para que continue o processo informe o seu email e cpf
+              </h7>
+
               <button
                 type="button"
-                class="close"
+                className="close"
                 data-dismiss="modal"
                 aria-label="Close"
               >
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
-            <div class="modal-body">...</div>
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                data-dismiss="modal"
-              >
-                Close
-              </button>
-              <button type="button" class="btn btn-primary">
-                Save changes
-              </button>
-            </div>
+            <Form onSubmit={onSubmit3} ref={formRef3}>
+              <div className="modal-body">
+                <small className="info-email">
+                  <img src={Warning} alt="" /> será enviado ao seu email uma
+                  confirmação de troca de senha
+                </small>
+
+                <div class="md-form md-outline">
+                  <i class="fas fa-user prefix"></i>
+                  <input
+                    type="text"
+                    id="inputIconEx1"
+                    class="form-control"
+                    name="cpf"
+                    required
+                    value={cpfMask(cpf)}
+                    onChange={(e) => processar(e.target.value)}
+                  />
+                  <label for="inputIconEx1">número de Cpf</label>
+                  <small id="emailHelp2" class="form-text text-muted">
+                    Nunca compartilharemos o seu cpf com ninguém.
+                  </small>
+                </div>
+                <div class="md-form md-outline">
+                  <i class="fas fa-envelope prefix"></i>
+                  <input
+                    type="email"
+                    id="inputIconEx1"
+                    class="form-control"
+                    required
+                    name="email"
+                  />
+                  <label for="inputIconEx1">endereço de E-mail</label>
+                  <small id="emailHelp2" class="form-text text-muted">
+                    você recebera o email nesta conta .
+                  </small>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-dark" data-dismiss="modal">
+                  FECHAR
+                </button>
+
+                <button
+                  className="btn btn-primary"
+                  id="trocarpassword"
+                  type="submit"
+                >
+                  ENVIAR
+                </button>
+              </div>
+            </Form>
           </div>
         </div>
       </div>
@@ -263,9 +328,12 @@ function Login() {
               </Form>
               <div className="hr"></div>
               <div className="foot-lnk">
-                <a data-toggle="modal" data-target="#exampleModal">
-                  Esqueceu a senha ?
-                </a>
+                <p>
+                  <label data-toggle="modal" data-target="#exampleModal">
+                    {" "}
+                    Esqueceu a senha ?{" "}
+                  </label>
+                </p>
               </div>
             </div>
 

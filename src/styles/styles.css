@@ -1903,12 +1903,64 @@ a {
 .foot-lnk label {
   margin: 0;
 }
-.foot-lnk a:link {
+.foot-lnk a {
   color: white;
 }
 .foot-lnk small {
   margin-right: 2%;
   color: white;
+}
+.foot-lnk p a {
+  margin-right: 2%;
+  color: white;
+}
+.container-forgot h5 {
+  color: white;
+  font-weight: 900;
+}
+.container-forgot {
+  height: 100vh;
+}
+.container-forgot img {
+  height: 14vh;
+  width: 30%;
+}
+.container-footer-forgot img {
+  max-width: 150px;
+  max-height: 100px;
+  width: auto;
+  height: auto;
+}
+.form-forgot {
+  margin-left: 36%;
+  width: 30%;
+  color: white;
+}
+#form40 {
+  color: white;
+}
+.form40 {
+  color: white;
+}
+
+.container-footer-forgot {
+  margin-top: 35vh;
+}
+.container-forgot-button {
+  width: 100%;
+  margin-bottom: 10vh;
+}
+.foot-lnk label {
+  margin-right: 2%;
+  color: white;
+  cursor: pointer;
+}
+.info-email {
+  color: red;
+}
+.info-email img {
+  width: 32px;
+  height: 32px;
 }
 
 *,

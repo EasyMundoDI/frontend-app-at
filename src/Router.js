@@ -29,12 +29,13 @@ import ForgetPassword from "../src/pages/ForgetPassword";
 const PagesRoot = () => (
   <Router forceRefresh={true}>
     <Route exact path="/" component={MainPage} />
+    <Route exact path="/forgot" component={ForgetPassword} />
     <AuthProvider>
       <Switch>
         <Route exact path="/signIn" component={SignIn} />
         <Route exact path="/signincert" component={SignInCertificate} />
         <Route exact path="/register" component={Register} />
-        <Route exact path="/forgot" component={ForgetPassword} />
+
         <Route
           exact
           path="/emailverification/:token"
