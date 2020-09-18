@@ -91,6 +91,15 @@ label #sidebar_btn:hover {
   margin-left: 170px;
   width: 80px;
 }
+#ChangePassword {
+  display: none;
+}
+#successCheck {
+  display: none;
+}
+#errorCheck {
+  display: none;
+}
 
 .wrapper .header .header-menu {
   -webkit-box-shadow: 1px 1px 32px -19px rgba(0, 0, 0, 1);
@@ -1795,9 +1804,8 @@ a {
 .container-verification {
   align-items: center;
   justify-content: center;
-  text-align: center;
+
   max-height: 100vh;
-  background-color: #35599a;
 }
 .login-html .sign-in:checked + .tab,
 .login-html .sign-up:checked + .tab {
@@ -1910,6 +1918,12 @@ a {
   margin-right: 2%;
   color: white;
 }
+.img-forgot {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-height: 100vh;
+}
 .foot-lnk p a {
   margin-right: 2%;
   color: white;
@@ -1922,7 +1936,7 @@ a {
   height: 100vh;
 }
 .container-forgot img {
-  height: 14vh;
+  height: 12%;
   width: 30%;
 }
 .container-footer-forgot img {
@@ -1931,10 +1945,19 @@ a {
   width: auto;
   height: auto;
 }
+.parag-troca {
+  text-align: center;
+  user-select: none;
+}
+#errorAccountPass {
+  display: none;
+}
 .form-forgot {
-  margin-left: 36%;
-  width: 30%;
-  color: white;
+  margin-left: 33%;
+  width: 35%;
+  background-color: #a5cde75e;
+  padding: 30px;
+  border-radius: 10px;
 }
 #form40 {
   color: white;
@@ -1949,6 +1972,12 @@ a {
 .container-forgot-button {
   width: 100%;
   margin-bottom: 10vh;
+  text-align: center;
+}
+.container-forgot-button img {
+  width: 100%;
+  margin-bottom: 10vh;
+  text-align: center;
 }
 .foot-lnk label {
   margin-right: 2%;

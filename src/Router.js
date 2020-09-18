@@ -29,7 +29,7 @@ import ForgetPassword from "../src/pages/ForgetPassword";
 const PagesRoot = () => (
   <Router forceRefresh={true}>
     <Route exact path="/" component={MainPage} />
-    <Route exact path="/forgot" component={ForgetPassword} />
+    <Route exact path="/forgot/:token/:cpf" component={ForgetPassword} />
     <AuthProvider>
       <Switch>
         <Route exact path="/signIn" component={SignIn} />

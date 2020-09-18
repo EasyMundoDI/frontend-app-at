@@ -148,28 +148,53 @@ function Login() {
       document.getElementById("register").disabled = false;
     }
   }
-  async function onSubmit3(data, { reset }) {
-    try {
-      const Schema = Yup.object().shape({
-        email: Yup.string()
-          .email("Digite um e-mail válido")
-          .required("O e-mail é obrigatório"),
-        cpf: Yup.string().required("O cpf é obrigatório"),
-      });
-      console.log(Schema);
-      await Schema.validate(data, {
-        abortEarly: false,
-      });
-      reset();
-    } catch (error) {
-      if (error instanceof Yup.ValidationError) {
-        const errorMessages = {};
-        error.inner.forEach((err) => {
-          errorMessages[err.path] = error.message;
-        });
-        console.log(errorMessages);
+  async function onSubmit3() {
+    var email = document.getElementById("emailname").value;
+    var cpf = document.getElementById("cpfnumber").value;
+
+    api.get(`/findUser/${email}/${cpf.replace(/\D/g, "")}`).then((result) => {
+      if (result.data === `strangeUser`) {
+        document.getElementById("errorCheck").style.display = "block";
+        setTimeout(() => {
+          document.getElementById("errorCheck").style.display = "none";
+        }, 5000);
+      } else {
+        api
+          .post("/emailChange", {
+            cpf: cpf.replace(/\D/g, ""),
+            email,
+          })
+          .then((result) => {
+            document.getElementById("successCheck").style.display = "block";
+            setTimeout(() => {
+              document.getElementById("successCheck").style.display = "none";
+
+              window.location.reload(false);
+            }, 5000);
+          })
+          .catch((err) => {
+            document.getElementById("ChangePassword").style.display = "block";
+          });
       }
-    }
+    });
+  }
+  async function reSendEmail() {
+    document.getElementById("ChangePassword").style.display = "none";
+    var email = document.getElementById("emailname").value;
+    var cpf = document.getElementById("cpfnumber").value;
+    api
+      .post("/emailChangeDouble", {
+        cpf: cpf.replace(/\D/g, ""),
+        email,
+      })
+      .then((result) => {
+        document.getElementById("successCheck").style.display = "block";
+        setTimeout(() => {
+          document.getElementById("successCheck").style.display = "none";
+
+          window.location.reload(false);
+        }, 5000);
+      });
   }
 
   return (
@@ -204,19 +229,47 @@ function Login() {
                   <img src={Warning} alt="" /> será enviado ao seu email uma
                   confirmação de troca de senha
                 </small>
+                <div
+                  className="alert alert-danger"
+                  id="errorCheck"
+                  role="alert"
+                >
+                  Não foi possível encontrar o usuário verifique o formulário e
+                  o reenvie !
+                </div>
+                <div
+                  className="alert alert-success"
+                  role="alert"
+                  id="successCheck"
+                >
+                  Email de verificação de troca de senha enviado com sucesso !
+                </div>
+                <div
+                  className="alert alert-danger"
+                  role="alert"
+                  id="ChangePassword"
+                >
+                  Já foi enviado ao seu email informações sobre a troca de senha
+                  procure na caixa de entrada ou na lixeira do seu email
+                  atenciosamente SupportMundoDigital !{" "}
+                  <strong onClick={() => reSendEmail()}>
+                    {" "}
+                    ou clique aqui para reenvia-lo{" "}
+                  </strong>
+                </div>
 
                 <div class="md-form md-outline">
                   <i class="fas fa-user prefix"></i>
                   <input
                     type="text"
-                    id="inputIconEx1"
+                    id="cpfnumber"
                     class="form-control"
                     name="cpf"
                     required
                     value={cpfMask(cpf)}
                     onChange={(e) => processar(e.target.value)}
                   />
-                  <label for="inputIconEx1">número de Cpf</label>
+                  <label for="cpfnumber">número de Cpf</label>
                   <small id="emailHelp2" class="form-text text-muted">
                     Nunca compartilharemos o seu cpf com ninguém.
                   </small>
@@ -225,12 +278,12 @@ function Login() {
                   <i class="fas fa-envelope prefix"></i>
                   <input
                     type="email"
-                    id="inputIconEx1"
+                    id="emailname"
                     class="form-control"
                     required
                     name="email"
                   />
-                  <label for="inputIconEx1">endereço de E-mail</label>
+                  <label for="emailname">endereço de E-mail</label>
                   <small id="emailHelp2" class="form-text text-muted">
                     você recebera o email nesta conta .
                   </small>
